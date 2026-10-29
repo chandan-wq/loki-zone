@@ -19,7 +19,7 @@ import {
   Key,
 } from "lucide-react";
 import { useSignUp } from "@clerk/nextjs/legacy";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useClerk } from "@clerk/nextjs";
 import { useAdminStore } from "@/store/useAdminStore";
 import { resolveAdminRole } from "@/lib/adminAuth";
 
@@ -27,19 +27,8 @@ export default function RegisterPage() {
   const router = useRouter();
   const { isLoaded, signUp, setActive } = useSignUp();
   const { user, isSignedIn, isLoaded: isUserLoaded } = useUser();
+  const { signOut } = useClerk();
   const { loginAdmin } = useAdminStore();
-
-  // ✅ Already logged in? Redirect immediately without showing the form
-  useEffect(() => {
-    if (!isUserLoaded || !isSignedIn || !user) return;
-    const email = user.primaryEmailAddress?.emailAddress || "";
-    const role = resolveAdminRole(email, user.publicMetadata?.role);
-    if (role) {
-      router.replace("/admin");
-    } else {
-      router.replace("/account");
-    }
-  }, [isUserLoaded, isSignedIn, user, router]);
 
   const [form, setForm] = useState({
     name: "",
@@ -69,8 +58,75 @@ export default function RegisterPage() {
     return () => clearInterval(timer);
   }, [resendCooldown]);
 
+  // If already signed in, show clean switch/continue prompt instead of trapping the user
+  if (isUserLoaded && isSignedIn && user) {
+    const currentEmail = user.primaryEmailAddress?.emailAddress || "";
+    const adminRole = resolveAdminRole(currentEmail, user.publicMetadata?.role);
+
+    return (
+      <div className="min-h-screen bg-gray-50/70 flex items-center justify-center py-12 px-4 sm:px-6">
+        <div className="max-w-md w-full bg-white rounded-3xl border border-gray-150 shadow-xl p-8 sm:p-10 space-y-6 text-center">
+          <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl mx-auto flex items-center justify-center border border-emerald-200 shadow-sm">
+            <CheckCircle2 className="w-7 h-7" />
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-black text-gray-950 tracking-tight">
+              Already Signed In
+            </h2>
+            <p className="text-xs text-gray-500 mt-1.5">
+              You are currently authenticated as:
+            </p>
+            <div className="mt-2 py-1.5 px-3 bg-gray-50 border border-gray-200 rounded-xl inline-block max-w-full">
+              <span className="text-xs font-bold text-gray-900 truncate block">
+                {currentEmail}
+              </span>
+            </div>
+            {adminRole && (
+              <span className="block mt-1 text-[10px] font-extrabold text-red-600 uppercase tracking-wider">
+                👑 {adminRole === "main" ? "Store Owner / Main Admin" : "Staff Desk"}
+              </span>
+            )}
+          </div>
+
+          <div className="space-y-2.5 pt-2">
+            <button
+              onClick={() => {
+                if (adminRole) {
+                  router.push("/admin");
+                } else {
+                  router.push("/account");
+                }
+              }}
+              className="w-full py-3.5 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-red-600/25 transition active:scale-[0.99]"
+            >
+              <span>Continue to {adminRole ? "Admin Workspace" : "My Account"}</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  await signOut();
+                  router.refresh();
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              disabled={loading}
+              className="w-full py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-2xl font-bold text-xs uppercase tracking-wider transition active:scale-[0.99] disabled:opacity-50"
+            >
+              {loading ? "Signing out..." : "Sign Out & Register New Account"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Show spinner while checking session
-  if (!isUserLoaded || (isSignedIn && user)) {
+  if (!isUserLoaded) {
     return (
       <div className="min-h-screen bg-gray-50/70 flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />

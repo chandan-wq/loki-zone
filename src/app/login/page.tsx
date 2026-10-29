@@ -184,9 +184,7 @@ function LoginForm() {
           setIs2FA(true);
           setInfoMessage(`We sent a 6-digit security code to ${cleanEmail}. Please check your inbox.`);
         } catch {
-          // Fallback if email code prep doesn't work, direct to full sign in
-          setError("Additional verification required. Redirecting to full portal...");
-          router.push("/sign-in");
+          setError("Could not prepare email verification code. Please check your credentials.");
         }
       } else if (result.status === "needs_first_factor") {
         const emailFactor = signIn.supportedFirstFactors?.find(
@@ -201,10 +199,10 @@ function LoginForm() {
           setIs2FA(true);
           setInfoMessage(`We sent a 6-digit security code to ${cleanEmail}.`);
         } else {
-          router.push("/sign-in");
+          setError("Account requires email verification. Please verify your email.");
         }
       } else {
-        router.push("/sign-in");
+        setError("Sign in could not be completed. Please verify your credentials.");
       }
     } catch (err: unknown) {
       const clerkError =
@@ -513,18 +511,12 @@ function LoginForm() {
               </button>
             </form>
 
-            {/* Fallback to Clerk Full Portal */}
-            <div className="text-center pt-2 border-t border-gray-100 space-y-1">
+            {/* Sign Up Link */}
+            <div className="text-center pt-2 border-t border-gray-100">
               <p className="text-xs text-gray-500">
                 Don&apos;t have an account?{" "}
                 <Link href="/register" className="font-bold text-red-600 hover:underline">
                   Create an account
-                </Link>
-              </p>
-              <p className="text-[11px] text-gray-400">
-                Having sign-in issues?{" "}
-                <Link href="/sign-in" className="text-gray-700 underline font-semibold">
-                  Open Clerk Full Portal
                 </Link>
               </p>
             </div>

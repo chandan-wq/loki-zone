@@ -230,6 +230,42 @@ export default function CheckoutPage() {
       };
       createOrder(newOrder);
 
+      // Asynchronous notification fallback trigger from browser
+      fetch("/api/orders/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: orderId,
+          customerName: formData.fullName,
+          phone: formData.phone,
+          email: formData.email,
+          city: formData.city,
+          address: formData.address,
+          subtotal: data.subtotal,
+          deliveryFee: data.deliveryFee,
+          total: finalTotal,
+          paymentMethod: paymentMethodMap[paymentMethod],
+          status: "Pending Confirmation",
+          date: new Date().toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          }),
+          items: items.map((i) => ({
+            id: i.id,
+            name: i.name,
+            price: i.price,
+            quantity: i.quantity,
+            image: i.image,
+          })),
+          courierNote: formData.notes
+            ? `${formData.notes} | Preferred City: ${formData.city}`
+            : `Delivery to ${formData.city}`,
+        }),
+      }).catch((notifyErr) => {
+        console.warn("[Checkout] Client notification fallback caught:", notifyErr);
+      });
+
       // 2. Increment coupon usage if used
       if (appliedCoupon) {
         incrementCouponUsage(appliedCoupon.code);

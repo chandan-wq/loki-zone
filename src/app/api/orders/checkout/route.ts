@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { createAdminClient } from "@/lib/supabase/server";
+import { sendOrderNotification } from "@/lib/sendOrderEmail";
 
 interface CheckoutRequestBody {
   idempotencyKey?: string;
@@ -171,18 +172,14 @@ export async function POST(req: NextRequest) {
           courierNote: notes ? `${notes} | City: ${city}` : `Delivery to ${city}`,
         };
 
-        // Fire and await notification route internally
-        const baseUrl =
-          process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-        fetch(`${baseUrl}/api/orders/notify`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(notifyPayload),
-        }).catch((err) => {
-          console.warn("[Checkout] Background notification trigger failed:", err);
-        });
+        // Send email notifications directly (Admin order alert & customer confirmation)
+        try {
+          await sendOrderNotification(notifyPayload);
+        } catch (emailErr) {
+          console.warn("[Checkout] Direct email notification warning:", emailErr);
+        }
       } catch (notifyErr) {
-        console.warn("[Checkout] Notification dispatch warning:", notifyErr);
+        console.warn("[Checkout] Notification preparation warning:", notifyErr);
       }
     }
 

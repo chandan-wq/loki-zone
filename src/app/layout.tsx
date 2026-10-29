@@ -16,6 +16,9 @@ import LokiAIAgent from "@/components/LokiAIAgent";
 // const montserrat = { variable: "" };
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL || "https://loki-zone.vercel.app"
+  ),
   title: "LOKI ZONE | Official Table Tennis Gear & Equipment",
   description:
     "Official LOKI table tennis store. Explore tournament-approved rackets, high-spin rubber blades, apparel, shoes, and ITTF balls. Free delivery over NPR 2,000.",
@@ -36,7 +39,13 @@ export default function RootLayout({
         className="min-h-full flex flex-col bg-white text-gray-900 selection:bg-red-600 selection:text-white font-sans"
         suppressHydrationWarning
       >
-        <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "pk_test_bWlnaHR5LWNhdC0yNzc4LmNsZXJrLmFjY291bnRzLmRldiQ"}>
+        <ClerkProvider
+          publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "pk_test_bWlnaHR5LWNhdC0yNzc4LmNsZXJrLmFjY291bnRzLmRldiQ"}
+          signInUrl="/login"
+          signUpUrl="/register"
+          signInFallbackRedirectUrl="/"
+          signUpFallbackRedirectUrl="/"
+        >
           <Navbar />
           <main className="flex-1">{children}</main>
           <Footer />
