@@ -1,9 +1,7 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
-
-export default clerkMiddleware(async (auth, req) => {
+export default clerkMiddleware(async (_auth, req) => {
   const pathname = req.nextUrl.pathname;
 
   // Strict Brand Isolation: Always route users to our internal branded /login and /register
@@ -18,15 +16,6 @@ export default clerkMiddleware(async (auth, req) => {
     const registerUrl = new URL("/register", req.url);
     if (req.nextUrl.search) registerUrl.search = req.nextUrl.search;
     return NextResponse.redirect(registerUrl);
-  }
-
-  if (isAdminRoute(req)) {
-    const { userId } = await auth();
-    if (!userId) {
-      const loginUrl = new URL("/login", req.url);
-      loginUrl.searchParams.set("redirect_url", req.url);
-      return NextResponse.redirect(loginUrl);
-    }
   }
 });
 

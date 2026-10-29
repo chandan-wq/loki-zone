@@ -75,11 +75,11 @@ function LoginForm() {
               onClick={() => {
                 const redirectUrl = searchParams.get("redirect_url");
                 if (redirectUrl && redirectUrl.includes("/admin") && adminRole) {
-                  router.push(redirectUrl);
+                  window.location.href = redirectUrl;
                 } else if (adminRole) {
-                  router.push("/admin");
+                  window.location.href = "/admin";
                 } else {
-                  router.push(redirectUrl || "/account");
+                  window.location.href = redirectUrl || "/account";
                 }
               }}
               className="w-full py-3.5 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-red-600/25 transition active:scale-[0.99]"
@@ -93,7 +93,7 @@ function LoginForm() {
                 setLoading(true);
                 try {
                   await signOut();
-                  router.refresh();
+                  window.location.href = "/login?switch=true";
                 } finally {
                   setLoading(false);
                 }
@@ -171,9 +171,9 @@ function LoginForm() {
         const resolvedRole = resolveAdminRole(cleanEmail);
         if (resolvedRole) {
           loginAdmin(cleanEmail, resolvedRole);
-          router.push(redirectUrl && redirectUrl.includes("/admin") ? redirectUrl : "/admin");
+          window.location.href = redirectUrl && redirectUrl.includes("/admin") ? redirectUrl : "/admin";
         } else {
-          router.push(redirectUrl || "/account");
+          window.location.href = redirectUrl || "/account";
         }
       } else if (
         result.status === "needs_second_factor" ||
@@ -264,9 +264,9 @@ function LoginForm() {
         const resolvedRole = resolveAdminRole(cleanEmail);
         if (resolvedRole) {
           loginAdmin(cleanEmail, resolvedRole);
-          router.push(redirectUrl && redirectUrl.includes("/admin") ? redirectUrl : "/admin");
+          window.location.href = redirectUrl && redirectUrl.includes("/admin") ? redirectUrl : "/admin";
         } else {
-          router.push(redirectUrl || "/account");
+          window.location.href = redirectUrl || "/account";
         }
       } else {
         setError("Verification code could not be verified. Please try again.");

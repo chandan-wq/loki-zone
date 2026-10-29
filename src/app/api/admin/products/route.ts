@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
-import { resolveAdminRole } from "@/lib/adminAuth";
+import { resolveAdminRole, extractClerkEmail } from "@/lib/adminAuth";
 import { createAdminClient } from "@/lib/supabase/server";
 
 export async function GET() {
   try {
     const user = await currentUser();
     const role = resolveAdminRole(
-      user?.primaryEmailAddress?.emailAddress,
+      extractClerkEmail(user),
       user?.publicMetadata?.role
     );
 
@@ -50,7 +50,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const user = await currentUser();
-    const adminEmail = user?.primaryEmailAddress?.emailAddress;
+    const adminEmail = extractClerkEmail(user);
     const role = resolveAdminRole(adminEmail, user?.publicMetadata?.role);
 
     if (!role) {
@@ -163,7 +163,7 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const user = await currentUser();
-    const adminEmail = user?.primaryEmailAddress?.emailAddress;
+    const adminEmail = extractClerkEmail(user);
     const role = resolveAdminRole(adminEmail, user?.publicMetadata?.role);
 
     // Only "main" admin or authorized staff can archive

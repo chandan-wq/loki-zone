@@ -93,9 +93,9 @@ export default function RegisterPage() {
             <button
               onClick={() => {
                 if (adminRole) {
-                  router.push("/admin");
+                  window.location.href = "/admin";
                 } else {
-                  router.push("/account");
+                  window.location.href = "/account";
                 }
               }}
               className="w-full py-3.5 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-red-600/25 transition active:scale-[0.99]"
@@ -109,7 +109,7 @@ export default function RegisterPage() {
                 setLoading(true);
                 try {
                   await signOut();
-                  router.refresh();
+                  window.location.href = "/register?switch=true";
                 } finally {
                   setLoading(false);
                 }

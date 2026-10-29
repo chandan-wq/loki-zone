@@ -67,6 +67,16 @@ export type AdminRole = "main" | "normal" | null;
  *   4. publicMetadata.role is "staff" or "normal" → "normal"
  *   5. Everything else → null (no admin access)
  */
+export function extractClerkEmail(user: any): string | null {
+  if (!user) return null;
+  return (
+    user.emailAddresses?.find((e: any) => e.id === user.primaryEmailAddressId)?.emailAddress ||
+    user.emailAddresses?.[0]?.emailAddress ||
+    user.primaryEmailAddress?.emailAddress ||
+    null
+  );
+}
+
 export function resolveAdminRole(
   email?: string | null,
   publicMetadataRole?: unknown

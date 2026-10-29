@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
-import { resolveAdminRole } from "@/lib/adminAuth";
+import { resolveAdminRole, extractClerkEmail } from "@/lib/adminAuth";
 import { createAdminClient } from "@/lib/supabase/server";
 
 export async function GET() {
   try {
     const user = await currentUser();
-    const email = user?.primaryEmailAddress?.emailAddress;
+    const email = extractClerkEmail(user);
     const role = resolveAdminRole(email, user?.publicMetadata?.role);
 
     if (!role) {
@@ -97,7 +97,7 @@ export async function GET() {
 export async function PATCH(req: NextRequest) {
   try {
     const user = await currentUser();
-    const adminEmail = user?.primaryEmailAddress?.emailAddress;
+    const adminEmail = extractClerkEmail(user);
     const role = resolveAdminRole(adminEmail, user?.publicMetadata?.role);
 
     if (!role) {
