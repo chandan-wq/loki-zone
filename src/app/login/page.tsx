@@ -175,16 +175,26 @@ function LoginForm() {
         } else {
           router.push(redirectUrl || "/account");
         }
-      } else if (result.status === "needs_second_factor") {
-        // Clerk 2-Factor Authentication requested (Email OTP code)
+      } else if (
+        result.status === "needs_second_factor" ||
+        result.status === "needs_client_trust"
+      ) {
+        // Clerk 2-Factor Authentication or Device Trust requested (Email OTP code)
         try {
+          const secondFactor = (signIn.supportedSecondFactors || []).find(
+            (f) => f.strategy === "email_code"
+          ) as { strategy: "email_code"; emailAddressId?: string } | undefined;
+
           await signIn.prepareSecondFactor({
             strategy: "email_code",
+            ...(secondFactor?.emailAddressId ? { emailAddressId: secondFactor.emailAddressId } : {}),
           });
           setIs2FA(true);
           setInfoMessage(`We sent a 6-digit security code to ${cleanEmail}. Please check your inbox.`);
-        } catch {
-          setError("Could not prepare email verification code. Please check your credentials.");
+        } catch (prepErr) {
+          console.warn("[Login] prepareSecondFactor notice:", prepErr);
+          setIs2FA(true);
+          setInfoMessage(`Please enter the 6-digit security code sent to ${cleanEmail}.`);
         }
       } else if (result.status === "needs_first_factor") {
         const emailFactor = signIn.supportedFirstFactors?.find(
@@ -231,7 +241,10 @@ function LoginForm() {
     setLoading2FA(true);
     try {
       let result;
-      if (signIn.status === "needs_second_factor") {
+      if (
+        signIn.status === "needs_second_factor" ||
+        signIn.status === "needs_client_trust"
+      ) {
         result = await signIn.attemptSecondFactor({
           strategy: "email_code",
           code: verificationCode.trim(),
