@@ -21,6 +21,7 @@ import {
   Lock,
 } from "lucide-react";
 import { useAdminStore, AdminOrder } from "@/store/useAdminStore";
+import { extractClerkEmail } from "@/lib/adminAuth";
 
 export default function OrderTrackingPage() {
   return (
@@ -42,7 +43,7 @@ function OrderTrackingContent() {
   const { orders } = useAdminStore();
   const { user } = useUser();
 
-  const userEmail = (user?.primaryEmailAddress?.emailAddress || "").trim().toLowerCase();
+  const userEmail = (extractClerkEmail(user) || "").trim().toLowerCase();
   const userPhone = user?.phoneNumbers?.[0]?.phoneNumber || "";
 
   const [orderIdQuery, setOrderIdQuery] = useState(initialOrderId);
@@ -58,38 +59,9 @@ function OrderTrackingContent() {
     }
   }, [userEmail, verifierQuery]);
 
-  // Attempt initial lookup if order ID is present in URL
-  useEffect(() => {
-    if (!initialOrderId) return;
-    const cleanId = initialOrderId.trim().toLowerCase();
-    const found = orders.find((o) => {
-      if (o.isDemo) return false;
-      const demoIds = ["LK-948210", "LK-842918", "LK-720491"];
-      if (demoIds.includes(o.id)) return false;
-
-      if (o.id.toLowerCase() !== cleanId) return false;
-
-      // If user is logged in and owns the order, allow immediate lookup
-      if (user) {
-        if (user.id && o.userId === user.id) return true;
-        if (userEmail && o.email?.toLowerCase() === userEmail) return true;
-      }
-      return false;
-    });
-
-    if (found) {
-      setMatchedOrder(found);
-      setSearched(true);
-    }
-  }, [initialOrderId, orders, user, userEmail]);
-
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const performTrackingLookup = async (cleanId: string, cleanVerifier: string) => {
     setSearchError("");
     setSearched(true);
-
-    const cleanId = orderIdQuery.trim();
-    const cleanVerifier = verifierQuery.trim();
 
     if (!cleanId) {
       setSearchError("Please enter your Order Number (e.g. CT-2610-00001).");
@@ -97,13 +69,7 @@ function OrderTrackingContent() {
       return;
     }
 
-    if (!cleanVerifier && !user) {
-      setSearchError("Please provide the Phone Number or Email used during checkout to verify your order.");
-      setMatchedOrder(null);
-      return;
-    }
-
-    // 1. First query server-side database with customer verification
+    // 1. First query server-side database
     try {
       const res = await fetch(
         `/api/orders/track?id=${encodeURIComponent(cleanId)}&verifier=${encodeURIComponent(cleanVerifier)}`
@@ -140,7 +106,7 @@ function OrderTrackingContent() {
         return;
       }
     } catch (err) {
-      console.warn("[Tracking] Server lookup error, falling back to local store:", err);
+      console.warn("[Tracking] Server lookup error, checking local store:", err);
     }
 
     // 2. Fallback check against local store
@@ -151,18 +117,17 @@ function OrderTrackingContent() {
 
       if (o.id.toLowerCase() !== cleanId.toLowerCase()) return false;
 
+      if (user && (o.userId === user.id || (userEmail && o.email?.toLowerCase() === userEmail))) {
+        return true;
+      }
+
       const cleanOrderPhone = (o.phone || "").replace(/\D/g, "");
       const cleanInputPhone = cleanVerifier.replace(/\D/g, "");
       const phoneMatch = cleanInputPhone.length >= 7 && cleanOrderPhone.includes(cleanInputPhone);
-
       const orderEmail = (o.email || "").toLowerCase().trim();
       const emailMatch = cleanVerifier.includes("@") && orderEmail === cleanVerifier.toLowerCase();
 
-      const authMatch = Boolean(
-        user && ((user.id && o.userId === user.id) || (userEmail && orderEmail === userEmail))
-      );
-
-      return phoneMatch || emailMatch || authMatch;
+      return phoneMatch || emailMatch;
     });
 
     if (found) {
@@ -170,10 +135,19 @@ function OrderTrackingContent() {
       setSearchError("");
     } else {
       setMatchedOrder(null);
-      setSearchError(
-        "No matching order found. Please check your Order Number and the phone or email entered at checkout."
-      );
+      setSearchError("No active shipment found matching this order and verification info.");
     }
+  };
+
+  // Attempt initial lookup if order ID is present in URL
+  useEffect(() => {
+    if (!initialOrderId) return;
+    performTrackingLookup(initialOrderId.trim(), verifierQuery.trim() || userEmail);
+  }, [initialOrderId, userEmail]);
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await performTrackingLookup(orderIdQuery.trim(), verifierQuery.trim());
   };
 
   const getStepStatus = (status: AdminOrder["status"]) => {

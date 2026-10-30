@@ -562,93 +562,7 @@ export const useAdminStore = create<AdminState>()(
   toggleAutoBestSeller: () =>
     set((state) => ({ autoBestSellerEnabled: !state.autoBestSellerEnabled })),
 
-  orders: [
-    {
-      id: "LK-948210",
-      customerName: "Rohan Sharma",
-      phone: "9841000000",
-      email: "rohan.sharma@example.com",
-      city: "Kathmandu",
-      address: "New Baneshwor, Ward 10",
-      subtotal: 2499,
-      deliveryFee: 0,
-      total: 2499,
-      paymentMethod: "eSewa",
-      status: "Delivered",
-      date: "Oct 18, 2026",
-      itemsCount: 1,
-      isDemo: true,
-      items: [
-        {
-          id: "loki-dragon-10",
-          name: "LOKI Dragon 10 Carbon Racket",
-          price: 2499,
-          quantity: 1,
-          image: "/images/product-1-light.png",
-        },
-      ],
-      courierNote: "Delivered via Pathao Express - AWB #948201",
-    },
-    {
-      id: "LK-842918",
-      customerName: "Aayush Adhikari",
-      phone: "9818223344",
-      email: "aayush.adh@gmail.com",
-      city: "Pokhara",
-      address: "Lakeside, Street 14",
-      subtotal: 5298,
-      deliveryFee: 0,
-      total: 5298,
-      paymentMethod: "Khalti",
-      status: "Processing",
-      date: "Oct 18, 2026",
-      itemsCount: 3,
-      isDemo: true,
-      items: [
-        {
-          id: "loki-court-swift-shoes",
-          name: "LOKI Swift Court Shoes (Size 42)",
-          price: 3499,
-          quantity: 1,
-          image: "/images/thumb-shoes.png",
-        },
-        {
-          id: "loki-aeroflex-jersey",
-          name: "LOKI Aeroflex Pro Jersey (L)",
-          price: 1799,
-          quantity: 1,
-          image: "/images/thumb-tshirt.png",
-        },
-      ],
-      courierNote: "Packed with bubble wrap. Courier pickup scheduled 2:00 PM.",
-    },
-    {
-      id: "LK-720491",
-      customerName: "Sunil Shrestha",
-      phone: "9803112233",
-      email: "sunil.sh@outlook.com",
-      city: "Lalitpur",
-      address: "Kumaripati",
-      subtotal: 1199,
-      deliveryFee: 100,
-      total: 1299,
-      paymentMethod: "Cash on Delivery",
-      status: "Dispatched",
-      date: "Oct 17, 2026",
-      itemsCount: 1,
-      isDemo: true,
-      items: [
-        {
-          id: "loki-pro-shorts",
-          name: "LOKI Pro Performance Shorts (M)",
-          price: 1199,
-          quantity: 1,
-          image: "/images/thumb-shorts.png",
-        },
-      ],
-      courierNote: "Handed over to Sundar Courier Rider - Contact 9801122334",
-    },
-  ],
+  orders: [],
 
   updateOrderStatus: (orderId, status) =>
     set((state) => ({
@@ -729,7 +643,10 @@ export const useAdminStore = create<AdminState>()(
 
   syncOrdersFromDB: async () => {
     try {
-      const res = await fetch("/api/admin/orders");
+      const token = await (typeof window !== "undefined" ? (window as any).Clerk?.session?.getToken() : null);
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      const res = await fetch("/api/admin/orders", { headers });
       if (!res.ok) return;
       const data = await res.json();
       if (data.success && Array.isArray(data.orders)) {

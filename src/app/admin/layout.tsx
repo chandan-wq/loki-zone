@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { resolveAdminRole } from "@/lib/adminAuth";
+import { resolveAdminRole, extractClerkEmail } from "@/lib/adminAuth";
 
 export default function AdminLayout({
   children,
@@ -23,13 +23,7 @@ export default function AdminLayout({
       return;
     }
 
-    const primaryEmail =
-      user.primaryEmailAddress?.emailAddress ||
-      user.emailAddresses.find((e) => e.id === user.primaryEmailAddressId)
-        ?.emailAddress ||
-      user.emailAddresses[0]?.emailAddress ||
-      "";
-
+    const primaryEmail = extractClerkEmail(user) || "";
     const role = resolveAdminRole(primaryEmail, user.publicMetadata?.role);
 
     if (!role) {

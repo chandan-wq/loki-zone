@@ -8,7 +8,7 @@ import { Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, KeyRound, CheckCircle
 import { useSignIn } from "@clerk/nextjs/legacy";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useAdminStore } from "@/store/useAdminStore";
-import { resolveAdminRole } from "@/lib/adminAuth";
+import { resolveAdminRole, extractClerkEmail } from "@/lib/adminAuth";
 
 function LoginForm() {
   const router = useRouter();
@@ -39,9 +39,25 @@ function LoginForm() {
     }
   }, [searchParams, isSignedIn, signOut]);
 
-  // If already signed in, show clean switch/continue prompt instead of trapping the user
+  // Auto-redirect if already signed in
+  useEffect(() => {
+    if (isUserLoaded && isSignedIn && user && searchParams.get("switch") !== "true") {
+      const currentEmail = extractClerkEmail(user) || "";
+      const adminRole = resolveAdminRole(currentEmail, user.publicMetadata?.role);
+      const redirectUrl = searchParams.get("redirect_url");
+
+      if (adminRole) {
+        loginAdmin(currentEmail, adminRole);
+        window.location.href = redirectUrl && redirectUrl.includes("/admin") ? redirectUrl : "/admin";
+      } else {
+        window.location.href = redirectUrl || "/account";
+      }
+    }
+  }, [isUserLoaded, isSignedIn, user, searchParams, loginAdmin]);
+
+  // If already signed in, show clean switch/continue prompt while redirecting
   if (isUserLoaded && isSignedIn && user && searchParams.get("switch") !== "true") {
-    const currentEmail = user.primaryEmailAddress?.emailAddress || "";
+    const currentEmail = extractClerkEmail(user) || "";
     const adminRole = resolveAdminRole(currentEmail, user.publicMetadata?.role);
 
     return (
@@ -53,10 +69,10 @@ function LoginForm() {
 
           <div>
             <h2 className="text-2xl font-black text-gray-950 tracking-tight">
-              Already Signed In
+              Redirecting to Workspace...
             </h2>
             <p className="text-xs text-gray-500 mt-1.5">
-              You are currently authenticated as:
+              Authenticated as:
             </p>
             <div className="mt-2 py-1.5 px-3 bg-gray-50 border border-gray-200 rounded-xl inline-block max-w-full">
               <span className="text-xs font-bold text-gray-900 truncate block">
@@ -74,10 +90,9 @@ function LoginForm() {
             <button
               onClick={() => {
                 const redirectUrl = searchParams.get("redirect_url");
-                if (redirectUrl && redirectUrl.includes("/admin") && adminRole) {
-                  window.location.href = redirectUrl;
-                } else if (adminRole) {
-                  window.location.href = "/admin";
+                if (adminRole) {
+                  loginAdmin(currentEmail, adminRole);
+                  window.location.href = redirectUrl && redirectUrl.includes("/admin") ? redirectUrl : "/admin";
                 } else {
                   window.location.href = redirectUrl || "/account";
                 }

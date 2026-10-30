@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
-import { resolveAdminRole, extractClerkEmail } from "@/lib/adminAuth";
+import { getVerifiedAdmin } from "@/lib/adminAuthServer";
 import { createAdminClient } from "@/lib/supabase/server";
 
-export async function GET() {
-  try {
-    const user = await currentUser();
-    const email = extractClerkEmail(user);
-    const role = resolveAdminRole(email, user?.publicMetadata?.role);
+export const dynamic = "force-dynamic";
 
-    if (!role) {
+export async function GET(req: NextRequest) {
+  try {
+    const adminSession = await getVerifiedAdmin(req);
+
+    if (!adminSession.authorized) {
       return NextResponse.json(
         { success: false, error: "Access denied. Administrator privileges required." },
         { status: 403 }
@@ -96,11 +95,10 @@ export async function GET() {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const user = await currentUser();
-    const adminEmail = extractClerkEmail(user);
-    const role = resolveAdminRole(adminEmail, user?.publicMetadata?.role);
+    const adminSession = await getVerifiedAdmin(req);
+    const adminEmail = adminSession.email;
 
-    if (!role) {
+    if (!adminSession.authorized) {
       return NextResponse.json(
         { success: false, error: "Access denied. Administrator privileges required." },
         { status: 403 }

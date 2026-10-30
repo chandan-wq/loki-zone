@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { PRODUCTS } from "@/data/products";
 import { useAdminStore } from "@/store/useAdminStore";
-import { resolveAdminRole } from "@/lib/adminAuth";
+import { resolveAdminRole, extractClerkEmail } from "@/lib/adminAuth";
 
 function UnauthorizedAlert() {
   const searchParams = useSearchParams();
@@ -47,6 +47,9 @@ export default function AccountPage() {
   const { signOut } = useClerk();
   const { orders, logoutAdmin } = useAdminStore();
 
+  const [dbOrders, setDbOrders] = useState<any[]>([]);
+  const [loadingDbOrders, setLoadingDbOrders] = useState(true);
+
   // Redirect to login if user is not signed in
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
@@ -54,28 +57,77 @@ export default function AccountPage() {
     }
   }, [isLoaded, isSignedIn, router]);
 
-  const userEmail = (user?.primaryEmailAddress?.emailAddress || "").trim().toLowerCase();
+  const userEmail = (extractClerkEmail(user) || "").trim().toLowerCase();
   const currentUserId = user?.id;
 
-  // Strict Customer Privacy Scoping:
-  // A customer MUST ONLY see their own non-demo orders matching their Clerk User ID or verified email.
+  // Fetch real database orders for authenticated customer
+  useEffect(() => {
+    let isMounted = true;
+    async function loadCustomerOrders() {
+      if (!isLoaded || !isSignedIn) {
+        setLoadingDbOrders(false);
+        return;
+      }
+      try {
+        const token = await (window as any).Clerk?.session?.getToken();
+        const headers: Record<string, string> = {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
+        const res = await fetch("/api/orders/my-orders", { headers });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.orders) && isMounted) {
+            setDbOrders(data.orders);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching customer orders:", err);
+      } finally {
+        if (isMounted) setLoadingDbOrders(false);
+      }
+    }
+    loadCustomerOrders();
+    return () => {
+      isMounted = false;
+    };
+  }, [isLoaded, isSignedIn]);
+
+  // Merge database orders with local store non-demo orders matching the user
   const customerOrders = useMemo(() => {
     if (!isSignedIn || !user) return [];
 
-    return orders.filter((order) => {
-      // 1. Never expose synthetic demo orders
+    const localMatching = orders.filter((order) => {
       if (order.isDemo) return false;
       const demoOrderIds = ["LK-948210", "LK-842918", "LK-720491"];
       if (demoOrderIds.includes(order.id)) return false;
 
-      // 2. Strict matching against authenticated identity
       const orderEmail = (order.email || "").trim().toLowerCase();
       const matchesUserId = Boolean(currentUserId && order.userId && order.userId === currentUserId);
       const matchesEmail = Boolean(userEmail && orderEmail && orderEmail === userEmail);
-
       return matchesUserId || matchesEmail;
     });
-  }, [orders, isSignedIn, user, userEmail, currentUserId]);
+
+    const seenIds = new Set<string>();
+    const combined: any[] = [];
+
+    // Prioritize genuine database orders
+    for (const o of dbOrders) {
+      if (!seenIds.has(o.id)) {
+        seenIds.add(o.id);
+        combined.push(o);
+      }
+    }
+
+    // Add any recent local orders not yet synced
+    for (const o of localMatching) {
+      if (!seenIds.has(o.id)) {
+        seenIds.add(o.id);
+        combined.push(o);
+      }
+    }
+
+    return combined;
+  }, [orders, dbOrders, isSignedIn, user, userEmail, currentUserId]);
 
   const adminRole = resolveAdminRole(userEmail, user?.publicMetadata?.role);
   const displayName =
@@ -212,7 +264,12 @@ export default function AccountPage() {
                   Past Orders ({customerOrders.length})
                 </h3>
 
-                {customerOrders.length === 0 ? (
+                {loadingDbOrders ? (
+                  <div className="bg-white rounded-3xl border border-gray-100 p-8 text-center text-gray-500 text-xs flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                    <span>Loading your order history...</span>
+                  </div>
+                ) : customerOrders.length === 0 ? (
                   <div className="bg-white rounded-3xl border border-gray-100 p-8 text-center text-gray-500 text-xs">
                     No orders placed yet. Explore our tournament equipment to make your first order!
                   </div>
@@ -250,12 +307,19 @@ export default function AccountPage() {
                               <CheckCircle2 className="w-3.5 h-3.5" />
                               <span>{order.status}</span>
                             </span>
+                            <Link
+                              href={`/order-tracking?id=${encodeURIComponent(order.id)}`}
+                              className="inline-flex items-center gap-1 px-3 py-1 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-full transition shadow-sm"
+                            >
+                              <span>Track</span>
+                              <ChevronRight className="w-3 h-3" />
+                            </Link>
                           </div>
                         </div>
 
                         {/* Order items */}
                         <div className="space-y-3">
-                          {order.items.map((item, idx) => (
+                          {order.items.map((item: any, idx: number) => (
                             <div
                               key={`${item.id || item.name}-${idx}`}
                               className="flex items-center justify-between gap-4"

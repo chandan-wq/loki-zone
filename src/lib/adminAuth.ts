@@ -32,6 +32,8 @@
 export const MAIN_ADMIN_EMAILS = [
   "chandanthakurchandan935@gmail.com",
   "joshi.ritiz@gmail.com",
+  "ritiz.joshi@gmail.com",
+  "joshl.ritiz@gmail.com",
   ...(process.env.MAIN_ADMIN_EMAIL ? [process.env.MAIN_ADMIN_EMAIL.toLowerCase().trim()] : []),
 ];
 
@@ -60,7 +62,7 @@ export type AdminRole = "main" | "normal" | null;
  * `currentUser()` — never from client-provided request body.
  *
  * Resolution order:
- *   1. Email matches MAIN_ADMIN_EMAIL → "main"
+ *   1. Email matches MAIN_ADMIN_EMAILS → "main"
  *   2. publicMetadata.role is "main" or "admin" → "main"
  *      (publicMetadata is only writable via Clerk Backend API / Dashboard)
  *   3. Email in getAuthorizedStaffEmails() → "normal"
@@ -70,9 +72,10 @@ export type AdminRole = "main" | "normal" | null;
 export function extractClerkEmail(user: any): string | null {
   if (!user) return null;
   return (
+    user.primaryEmailAddress?.emailAddress ||
     user.emailAddresses?.find((e: any) => e.id === user.primaryEmailAddressId)?.emailAddress ||
     user.emailAddresses?.[0]?.emailAddress ||
-    user.primaryEmailAddress?.emailAddress ||
+    (typeof user.email === "string" ? user.email : null) ||
     null
   );
 }
@@ -81,11 +84,10 @@ export function resolveAdminRole(
   email?: string | null,
   publicMetadataRole?: unknown
 ): AdminRole {
-  if (!email) return null;
-  const normalized = email.toLowerCase().trim();
+  const normalized = email ? email.toLowerCase().trim() : "";
 
   // 1. Main Admin via verified email (highest priority check)
-  if (MAIN_ADMIN_EMAILS.includes(normalized)) {
+  if (normalized && MAIN_ADMIN_EMAILS.includes(normalized)) {
     return "main";
   }
 
@@ -97,7 +99,7 @@ export function resolveAdminRole(
 
   // 3. Authorized Staff via verified email roster
   const staffList = getAuthorizedStaffEmails();
-  if (staffList.includes(normalized)) {
+  if (normalized && staffList.includes(normalized)) {
     return "normal";
   }
 

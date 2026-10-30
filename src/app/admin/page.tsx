@@ -73,6 +73,7 @@ import {
   CTABannerCMS,
 } from "@/store/useAdminStore";
 import { Product } from "@/data/products";
+import { resolveAdminRole, extractClerkEmail } from "@/lib/adminAuth";
 
 // Hero CMS Gradient Themes
 const GRADIENT_PRESETS = [
@@ -156,6 +157,16 @@ export default function AdminDashboardPage() {
   const isMaster = adminRole === "main";
   const isNormal = adminRole === "normal";
 
+  // Helper to obtain server-verified admin authorization headers
+  const getAdminAuthHeaders = async (): Promise<Record<string, string>> => {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    try {
+      const token = await (window as any).Clerk?.session?.getToken();
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+    } catch {}
+    return headers;
+  };
+
   // Authentication Guard synchronized with Clerk server session
   const [isClientReady, setIsClientReady] = useState(false);
 
@@ -169,26 +180,11 @@ export default function AdminDashboardPage() {
       return;
     }
 
-    const primaryEmail =
-      user.emailAddresses.find((e) => e.id === user.primaryEmailAddressId)
-        ?.emailAddress ||
-      user.emailAddresses[0]?.emailAddress ||
-      "";
+    const primaryEmail = extractClerkEmail(user) || "";
+    const role = resolveAdminRole(primaryEmail, user.publicMetadata?.role);
 
-    const normalized = primaryEmail.toLowerCase().trim();
-    const isMain =
-      normalized === "chandanthakurchandan935@gmail.com" ||
-      normalized === "joshi.ritiz@gmail.com" ||
-      user.publicMetadata?.role === "main";
-    const isStaff =
-      normalized === "staff@lokizone.com.np" ||
-      user.publicMetadata?.role === "normal" ||
-      user.publicMetadata?.role === "staff";
-
-    if (isMain) {
-      loginAdmin(normalized, "main");
-    } else if (isStaff) {
-      loginAdmin(normalized, "normal");
+    if (role) {
+      loginAdmin(primaryEmail, role);
     } else {
       logoutAdmin();
       router.replace("/account?error=unauthorized_admin");
@@ -198,9 +194,10 @@ export default function AdminDashboardPage() {
     // Synchronize live database orders and catalog
     const syncDatabaseState = async () => {
       try {
+        const headers = await getAdminAuthHeaders();
         const [ordersRes, prodsRes] = await Promise.all([
-          fetch("/api/admin/orders"),
-          fetch("/api/admin/products"),
+          fetch("/api/admin/orders", { headers }),
+          fetch("/api/admin/products", { headers }),
         ]);
         if (ordersRes.ok) {
           const ordersData = await ordersRes.json();
@@ -499,11 +496,18 @@ export default function AdminDashboardPage() {
     addProduct(created);
     setIsAddProductOpen(false);
     showToast(`✅ Created product "${created.name}" successfully!`);
-    fetch("/api/admin/products", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(created),
-    }).catch((err) => console.error("Failed to save product to database:", err));
+    (async () => {
+      try {
+        const headers = await getAdminAuthHeaders();
+        await fetch("/api/admin/products", {
+          method: "POST",
+          headers,
+          body: JSON.stringify(created),
+        });
+      } catch (err) {
+        console.error("Failed to save product to database:", err);
+      }
+    })();
     setNewProd({
       name: "",
       subtitle: "",
@@ -525,27 +529,73 @@ export default function AdminDashboardPage() {
     });
   };
 
-  const handleSaveProductEdit = (e: React.FormEvent) => {
+  const handleSaveProductEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingProduct || !isMaster) return;
     updateProduct(editingProduct.id, editingProduct);
     setIsEditProductOpen(false);
     showToast(`✅ Updated "${editingProduct.name}" completely!`);
-    fetch("/api/admin/products", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(editingProduct),
-    }).catch((err) => console.error("Failed to update product in database:", err));
+    try {
+      const headers = await getAdminAuthHeaders();
+      await fetch("/api/admin/products", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(editingProduct),
+      });
+    } catch (err) {
+      console.error("Failed to update product in database:", err);
+    }
   };
 
-  const handleDeleteProduct = (id: string, name: string) => {
+  const handleDeleteProduct = async (id: string, name: string) => {
     if (!isMaster) return;
     if (confirm(`Are you sure you want to delete "${name}" from catalog?`)) {
       deleteProduct(id);
       showToast(`🗑️ Deleted "${name}" from catalog.`);
-      fetch("/api/admin/products?id=" + encodeURIComponent(id), {
-        method: "DELETE",
-      }).catch((err) => console.error("Failed to archive product in database:", err));
+      try {
+        const headers = await getAdminAuthHeaders();
+        await fetch("/api/admin/products?id=" + encodeURIComponent(id), {
+          method: "DELETE",
+          headers,
+        });
+      } catch (err) {
+        console.error("Failed to archive product in database:", err);
+      }
+    }
+  };
+
+  const handleStockAdjust = async (id: string, delta: number) => {
+    adjustStock(id, delta);
+    const target = products.find((p) => p.id === id);
+    if (!target) return;
+    const newCount = Math.max(0, target.stockCount + delta);
+    const updatedProduct = { ...target, stockCount: newCount, inStock: newCount > 0 };
+    try {
+      const headers = await getAdminAuthHeaders();
+      await fetch("/api/admin/products", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(updatedProduct),
+      });
+    } catch (err) {
+      console.error("Failed to persist stock update:", err);
+    }
+  };
+
+  const handlePriceInlineUpdate = async (id: string, newPrice: number) => {
+    updateProduct(id, { price: newPrice });
+    const target = products.find((p) => p.id === id);
+    if (!target) return;
+    const updatedProduct = { ...target, price: newPrice };
+    try {
+      const headers = await getAdminAuthHeaders();
+      await fetch("/api/admin/products", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(updatedProduct),
+      });
+    } catch (err) {
+      console.error("Failed to persist price update:", err);
     }
   };
 
@@ -1327,7 +1377,7 @@ export default function AdminDashboardPage() {
                           <td className="py-3 px-4 text-center">
                             <div className="inline-flex items-center gap-2 bg-[#0b0f17] border border-slate-800 rounded-xl px-2 py-1">
                               <button
-                                onClick={() => adjustStock(p.id, -1)}
+                                onClick={() => handleStockAdjust(p.id, -1)}
                                 className="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center font-bold text-xs transition"
                                 title="Decrease Stock (-1)"
                               >
@@ -1341,7 +1391,7 @@ export default function AdminDashboardPage() {
                                 {p.stockCount}
                               </span>
                               <button
-                                onClick={() => adjustStock(p.id, 1)}
+                                onClick={() => handleStockAdjust(p.id, 1)}
                                 className="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center font-bold text-xs transition"
                                 title="Increase Stock (+1)"
                               >
@@ -1360,7 +1410,7 @@ export default function AdminDashboardPage() {
                                   onBlur={(e) => {
                                     const val = Number(e.target.value);
                                     if (val > 0 && val !== p.price) {
-                                      updateProduct(p.id, { price: val });
+                                      handlePriceInlineUpdate(p.id, val);
                                       showToast(`Updated "${p.name}" price to Rs. ${val}`);
                                     }
                                   }}
@@ -2047,7 +2097,7 @@ export default function AdminDashboardPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  {["ALL", "Processing", "Dispatched", "Delivered"].map((st) => (
+                  {["ALL", "Pending Confirmation", "Processing", "Dispatched", "Delivered", "Cancelled"].map((st) => (
                     <button
                       key={st}
                       onClick={() => setOrderFilter(st)}
@@ -2108,9 +2158,10 @@ export default function AdminDashboardPage() {
                                 updateOrderStatus(o.id, newStatus);
                                 showToast(`Order ${o.id} marked as ${newStatus}.`);
                                 try {
+                                  const headers = await getAdminAuthHeaders();
                                   await fetch("/api/admin/orders", {
                                     method: "PATCH",
-                                    headers: { "Content-Type": "application/json" },
+                                    headers,
                                     body: JSON.stringify({
                                       orderId: o.id,
                                       newStatus,
@@ -2124,8 +2175,7 @@ export default function AdminDashboardPage() {
                               className="bg-[#0b0f17] border border-slate-700 text-white font-bold text-[11px] rounded-lg px-2.5 py-1 focus:outline-none focus:border-red-500"
                             >
                               <option value="Pending Confirmation">Pending Confirmation</option>
-                              <option value="Pending Confirmation">Pending Confirmation</option>
-                  <option value="Processing">Processing</option>
+                              <option value="Processing">Processing</option>
                               <option value="Dispatched">Dispatched</option>
                               <option value="Delivered">Delivered</option>
                               <option value="Cancelled">Cancelled</option>
@@ -3220,17 +3270,22 @@ export default function AdminDashboardPage() {
                 />
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
                     updateOrderCourierNote(selectedInvoiceOrder.id, courierNoteInput);
                     showToast(`Courier note updated for ${selectedInvoiceOrder.id}`);
-                    fetch("/api/admin/orders", {
-                      method: "PATCH",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        orderId: selectedInvoiceOrder.id,
-                        courierNote: courierNoteInput,
-                      }),
-                    }).catch((err) => console.error("Failed to update courier note:", err));
+                    try {
+                      const headers = await getAdminAuthHeaders();
+                      await fetch("/api/admin/orders", {
+                        method: "PATCH",
+                        headers,
+                        body: JSON.stringify({
+                          orderId: selectedInvoiceOrder.id,
+                          courierNote: courierNoteInput,
+                        }),
+                      });
+                    } catch (err) {
+                      console.error("Failed to update courier note:", err);
+                    }
                   }}
                   className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold transition"
                 >
@@ -3254,9 +3309,10 @@ export default function AdminDashboardPage() {
                     });
                     showToast(`Order status updated to ${newStatus}`);
                     try {
+                      const headers = await getAdminAuthHeaders();
                       await fetch("/api/admin/orders", {
                         method: "PATCH",
-                        headers: { "Content-Type": "application/json" },
+                        headers,
                         body: JSON.stringify({
                           orderId: selectedInvoiceOrder.id,
                           newStatus,
@@ -3345,10 +3401,23 @@ export default function AdminDashboardPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
                     updateOrderCourierNote(selectedOrder.id, courierNoteInput);
                     setSelectedOrder(null);
                     showToast(`Saved courier note for ${selectedOrder.id}.`);
+                    try {
+                      const headers = await getAdminAuthHeaders();
+                      await fetch("/api/admin/orders", {
+                        method: "PATCH",
+                        headers,
+                        body: JSON.stringify({
+                          orderId: selectedOrder.id,
+                          courierNote: courierNoteInput,
+                        }),
+                      });
+                    } catch (err) {
+                      console.error("Failed to persist courier note:", err);
+                    }
                   }}
                   className="px-5 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold transition shadow-md shadow-red-600/30"
                 >
