@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getVerifiedAdmin } from "@/lib/adminAuthServer";
 import { createAdminClient } from "@/lib/supabase/server";
 
-export const dynamic = "force-dynamic";
-
 export async function GET(req: NextRequest) {
   try {
     const adminSession = await getVerifiedAdmin(req);
