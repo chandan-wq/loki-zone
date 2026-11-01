@@ -75,23 +75,23 @@ import {
 import { Product } from "@/data/products";
 import { resolveAdminRole, extractClerkEmail } from "@/lib/adminAuth";
 
-// Hero CMS Gradient Themes
+// Hero CMS Color Themes (Normal, Professional Sports Palettes)
 const GRADIENT_PRESETS = [
   {
-    name: "Electric Violet / Blue",
-    value: "linear-gradient(135deg, #1d4ed8 0%, #3b82f6 30%, #8b5cf6 65%, #ec4899 100%)",
+    name: "Iconic LOKI Crimson Red",
+    value: "#dc2626",
   },
   {
-    name: "Hyper Crimson / Flame",
-    value: "linear-gradient(135deg, #ef4444 0%, #f97316 45%, #eab308 100%)",
+    name: "Deep Tournament Scarlet",
+    value: "#b91c1c",
   },
   {
-    name: "Cyber Cyan / Neon",
-    value: "linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%)",
+    name: "Bold Carbon Slate",
+    value: "#1e293b",
   },
   {
-    name: "Solar Amber / Emerald",
-    value: "linear-gradient(135deg, #f59e0b 0%, #10b981 50%, #06b6d4 100%)",
+    name: "Dark Onyx Black",
+    value: "#111827",
   },
 ];
 

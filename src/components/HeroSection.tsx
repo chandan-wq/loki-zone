@@ -18,18 +18,22 @@ import {
 import { useAdminStore } from "@/store/useAdminStore";
 
 export default function HeroSection() {
-  // Clear persisted admin store to avoid stale `file://` URLs that cause Next.js image errors
-  if (typeof window !== 'undefined') {
-    try {
-      localStorage.removeItem('loki_admin_store_v4');
-    } catch (e) {
-      // ignore any storage errors
-    }
-  }
   const { heroSlides, floatingPills } = useAdminStore();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState("racket");
   const [isPaused, setIsPaused] = useState(false);
+
+  // One-time cleanup for stale local cache if corrupted
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('loki_admin_store_v4');
+      if (stored && stored.includes('file://')) {
+        localStorage.removeItem('loki_admin_store_v4');
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // Safe fallback if slides array changes
   const slides = heroSlides && heroSlides.length > 0 ? heroSlides : [];
@@ -76,8 +80,8 @@ export default function HeroSection() {
                 alt={`${s.titleLine1} ${s.titleLine2}`}
                 fill
                 priority={idx === 0}
-                quality={100}
-                sizes="100vw"
+                quality={75}
+                sizes="(max-width: 768px) 100vw, (max-width: 1280px) 100vw, 1920px"
                 className="object-cover object-center select-none"
               />
             </div>
@@ -101,22 +105,13 @@ export default function HeroSection() {
                 </span>
               </div>
 
-              {/* Massive Impact Title with Perfect Gradient Clipping */}
-              <div className="space-y-1">
-                <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-gray-950 tracking-tighter leading-[0.92]">
+              {/* Massive Impact Title: Normal Colored, Razor-Sharp Sports Typography */}
+              <div className="space-y-1 sm:space-y-2">
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black text-gray-950 tracking-tight leading-[0.98] uppercase">
                   {slide.titleLine1}
                 </h1>
-                <h2 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter leading-[0.95] italic">
-                  <span
-                    style={{
-                      background: slide.gradient,
-                      WebkitBackgroundClip: "text",
-                      WebkitTextFillColor: "transparent",
-                      display: "inline-block",
-                    }}
-                  >
-                    {slide.titleLine2}
-                  </span>
+                <h2 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black text-red-600 tracking-tight leading-[0.98] uppercase">
+                  {slide.titleLine2}
                 </h2>
               </div>
 

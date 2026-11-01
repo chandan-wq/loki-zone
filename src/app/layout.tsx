@@ -1,13 +1,14 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import { Suspense } from "react";
+import dynamic from "next/dynamic";
 import type { Metadata } from "next";
-// Font imports disabled for offline build; using system defaults.
-// import { Plus_Jakarta_Sans, Montserrat } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import CartDrawer from "@/components/CartDrawer";
-import LokiAIAgent from "@/components/LokiAIAgent";
+
+// Lazy-load off-screen interactive widgets to maximize initial page open speed
+const CartDrawer = dynamic(() => import("@/components/CartDrawer"));
+const LokiAIAgent = dynamic(() => import("@/components/LokiAIAgent"));
 
 // Font constants disabled for offline build
 // const jakarta = { variable: "" };
@@ -35,6 +36,10 @@ export default function RootLayout({
       className="h-full antialiased"
       suppressHydrationWarning
     >
+      <head>
+        <link rel="preconnect" href="https://img.clerk.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://img.clerk.com" />
+      </head>
       <body
         className="min-h-full flex flex-col bg-white text-gray-900 selection:bg-red-600 selection:text-white font-sans"
         suppressHydrationWarning

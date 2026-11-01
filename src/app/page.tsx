@@ -1,12 +1,15 @@
+import dynamic from "next/dynamic";
 import HeroSection from "@/components/HeroSection";
 import HorizontalScrollShowcase from "@/components/HorizontalScrollShowcase";
 import CategorySection from "@/components/CategorySection";
-import EquipmentFinderSection from "@/components/EquipmentFinderSection";
-import AutomatedBestSellers from "@/components/AutomatedBestSellers";
-import BrandStory from "@/components/BrandStory";
-import PlayerReviewsSection from "@/components/PlayerReviewsSection";
-import HomeFAQSection from "@/components/HomeFAQSection";
-import FinalCTASection from "@/components/FinalCTASection";
+
+// Defer below-the-fold sections so Hero and top showcase load immediately
+const EquipmentFinderSection = dynamic(() => import("@/components/EquipmentFinderSection"));
+const AutomatedBestSellers = dynamic(() => import("@/components/AutomatedBestSellers"));
+const BrandStory = dynamic(() => import("@/components/BrandStory"));
+const PlayerReviewsSection = dynamic(() => import("@/components/PlayerReviewsSection"));
+const HomeFAQSection = dynamic(() => import("@/components/HomeFAQSection"));
+const FinalCTASection = dynamic(() => import("@/components/FinalCTASection"));
 
 export default function HomePage() {
   return (

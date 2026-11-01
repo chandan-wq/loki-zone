@@ -464,7 +464,7 @@ export const useAdminStore = create<AdminState>()(
       eyebrow: "PREMIUM TABLE TENNIS GEAR",
       titleLine1: "PLAY YOUR",
       titleLine2: "BEST GAME",
-      gradient: "linear-gradient(135deg, #1d4ed8 0%, #3b82f6 30%, #8b5cf6 65%, #ec4899 100%)",
+      gradient: "#dc2626",
       description:
         "High performance gear for players who never settle. From rackets to apparel, we've got everything you need.",
       ctaText: "Shop Now",
@@ -477,7 +477,7 @@ export const useAdminStore = create<AdminState>()(
       eyebrow: "CHAMPIONSHIP BLADE SERIES",
       titleLine1: "UNLEASH THE",
       titleLine2: "DRAGON SPIN",
-      gradient: "linear-gradient(135deg, #ef4444 0%, #f97316 45%, #eab308 100%)",
+      gradient: "#dc2626",
       description:
         "Engineered with 5-ply alpine wood and carbon micro-mesh for explosive topspin trajectory and unmatched table feel.",
       ctaText: "Explore Dragon 10",
@@ -490,7 +490,7 @@ export const useAdminStore = create<AdminState>()(
       eyebrow: "MATCH DAY TOURNAMENT ARENA",
       titleLine1: "STAY COOL",
       titleLine2: "DOMINATE RALLIES",
-      gradient: "linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%)",
+      gradient: "#dc2626",
       description:
         "Aeroflex breathable QuickDry jerseys and Swift court grip shoes engineered for rapid lateral footwork.",
       ctaText: "View Match Gear",
