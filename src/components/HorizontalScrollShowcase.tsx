@@ -215,10 +215,18 @@ function CategoryCardItem({
     <Link
       href={item.href}
       onClick={(e) => {
-        if (hasDragged) e.preventDefault();
+        if (hasDragged) {
+          e.preventDefault();
+          return;
+        }
+        // On mobile, if not swiped yet, first tap smoothly triggers animation
+        if (isMobile && !isSwiped) {
+          e.preventDefault();
+          startAnimation();
+        }
       }}
       onMouseEnter={handleMouseEnter}
-      className={`group flex-shrink-0 snap-start w-[76vw] max-w-[280px] sm:w-[300px] md:w-[320px] lg:w-[330px] rounded-2xl sm:rounded-3xl bg-[#0c121e] border p-2 sm:p-2.5 transition-all duration-500 flex flex-col justify-between block select-none origin-bottom ${
+      className={`group flex-shrink-0 snap-center sm:snap-start w-[76vw] max-w-[280px] sm:w-[300px] md:w-[320px] lg:w-[330px] rounded-2xl sm:rounded-3xl bg-[#0c121e] border p-2 sm:p-2.5 transition-all duration-500 flex flex-col justify-between block select-none origin-bottom ${
         /* Mobile: 1 elevated, others blurred */
         isMobileSpotlight
           ? "translate-y-0 scale-100 opacity-100 blur-none z-10 border-slate-700/90 shadow-2xl shadow-black/80 ring-1 ring-red-500/40"
@@ -513,6 +521,66 @@ export default function HorizontalScrollShowcase() {
     }
   };
 
+  // Touch Swipe Physics for Mobile Finger Gestures
+  const touchStartXRef = useRef(0);
+  const touchStartYRef = useRef(0);
+  const touchStartScrollLeftRef = useRef(0);
+  const isTouchScrollingRef = useRef(false);
+  const touchStartTimeRef = useRef(0);
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!scrollRef.current || e.touches.length === 0) return;
+    const touch = e.touches[0];
+    touchStartXRef.current = touch.clientX;
+    touchStartYRef.current = touch.clientY;
+    touchStartScrollLeftRef.current = scrollRef.current.scrollLeft;
+    touchStartTimeRef.current = Date.now();
+    isTouchScrollingRef.current = false;
+    setHasDragged(false);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!scrollRef.current || e.touches.length === 0) return;
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - touchStartXRef.current;
+    const deltaY = touch.clientY - touchStartYRef.current;
+
+    // Detect if the user is swiping horizontally with their finger
+    if (!isTouchScrollingRef.current) {
+      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 6) {
+        isTouchScrollingRef.current = true;
+      }
+    }
+
+    if (isTouchScrollingRef.current) {
+      setHasDragged(true);
+      scrollRef.current.scrollLeft = touchStartScrollLeftRef.current - deltaX;
+      updateScrollState();
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!scrollRef.current) return;
+    const touchDuration = Date.now() - touchStartTimeRef.current;
+    const touchDistance = touchStartXRef.current - (e.changedTouches[0]?.clientX || touchStartXRef.current);
+
+    // Fast flick gesture detection (< 300ms and > 30px)
+    if (touchDuration < 300 && Math.abs(touchDistance) > 30) {
+      if (touchDistance > 0 && canScrollRight) {
+        scroll("right");
+      } else if (touchDistance < 0 && canScrollLeft) {
+        scroll("left");
+      }
+    } else {
+      updateScrollState();
+    }
+
+    isTouchScrollingRef.current = false;
+    setTimeout(() => {
+      setHasDragged(false);
+    }, 150);
+  };
+
   return (
     <section
       ref={sectionRef}
@@ -597,13 +665,17 @@ export default function HorizontalScrollShowcase() {
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseLeave}
-          className={`flex gap-4 sm:gap-6 overflow-x-auto pb-10 pt-4 scrollbar-none select-none -mx-4 px-4 sm:mx-0 sm:px-0 items-end ${
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          className={`flex gap-4 sm:gap-6 overflow-x-auto pb-10 pt-4 scrollbar-none select-none -mx-4 px-4 sm:mx-0 sm:px-0 items-end snap-x snap-mandatory ${
             isDragging ? "cursor-grabbing" : "cursor-grab"
           }`}
           style={{
             scrollbarWidth: "none",
             msOverflowStyle: "none",
-            touchAction: "pan-y",
+            WebkitOverflowScrolling: "touch",
+            touchAction: "pan-x pan-y",
           }}
         >
           {CATEGORY_ITEMS.map((item, index) => {

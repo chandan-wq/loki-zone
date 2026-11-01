@@ -180,8 +180,8 @@ export default function HeroSection() {
             <div className="hidden lg:block lg:col-span-5 xl:col-span-5 pointer-events-none" />
 
             {/* Right Column: Floating Category Cards Strip */}
-            <div className="lg:col-span-2 xl:col-span-2 flex lg:justify-end">
-              <div className="flex lg:flex-col gap-3 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 w-full sm:w-auto">
+            <div className="lg:col-span-2 xl:col-span-2 flex justify-center sm:justify-start lg:justify-end">
+              <div className="flex lg:flex-col gap-2.5 sm:gap-3 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 w-full sm:w-auto justify-center sm:justify-start lg:justify-end scrollbar-none">
                 {floatingPills.map((item) => {
                   const isActive = selectedCategory === item.id;
                   return (
@@ -224,60 +224,60 @@ export default function HeroSection() {
 
       {/* Bottom Features / Trust Bar */}
       <div className="relative z-20 bg-white border-t border-gray-100 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-0 lg:divide-x lg:divide-gray-100">
-            <div className="flex items-center gap-4 lg:px-6 first:lg:pl-0">
-              <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center flex-shrink-0 text-red-600 shadow-inner">
-                <Truck className="w-6 h-6" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-0 lg:divide-x lg:divide-gray-100">
+            <div className="flex items-center gap-3 sm:gap-4 lg:px-6 first:lg:pl-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-red-50 flex items-center justify-center flex-shrink-0 text-red-600 shadow-inner">
+                <Truck className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
               <div>
-                <h4 className="text-sm font-black text-gray-950 leading-tight">
+                <h4 className="text-xs sm:text-sm font-black text-gray-950 leading-tight">
                   Free Shipping
                 </h4>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  On orders over NPR 2,000
+                <p className="text-[11px] sm:text-xs text-gray-500 mt-0.5">
+                  Over NPR 2,000
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 lg:px-6">
-              <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center flex-shrink-0 text-red-600 shadow-inner">
-                <ShieldCheck className="w-6 h-6" />
+            <div className="flex items-center gap-3 sm:gap-4 lg:px-6">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-red-50 flex items-center justify-center flex-shrink-0 text-red-600 shadow-inner">
+                <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
               <div>
-                <h4 className="text-sm font-black text-gray-950 leading-tight">
+                <h4 className="text-xs sm:text-sm font-black text-gray-950 leading-tight">
                   Secure Payment
                 </h4>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  100% safe &amp; encrypted
+                <p className="text-[11px] sm:text-xs text-gray-500 mt-0.5">
+                  100% Safe &amp; COD
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 lg:px-6">
-              <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center flex-shrink-0 text-red-600 shadow-inner">
-                <Headphones className="w-6 h-6" />
+            <div className="flex items-center gap-3 sm:gap-4 lg:px-6">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-red-50 flex items-center justify-center flex-shrink-0 text-red-600 shadow-inner">
+                <Headphones className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
               <div>
-                <h4 className="text-sm font-black text-gray-950 leading-tight">
+                <h4 className="text-xs sm:text-sm font-black text-gray-950 leading-tight">
                   24/7 Support
                 </h4>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  We&apos;re here to help
+                <p className="text-[11px] sm:text-xs text-gray-500 mt-0.5">
+                  WhatsApp &amp; Call
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 lg:px-6 last:lg:pr-0">
-              <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center flex-shrink-0 text-red-600 shadow-inner">
-                <Award className="w-6 h-6" />
+            <div className="flex items-center gap-3 sm:gap-4 lg:px-6 last:lg:pr-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-red-50 flex items-center justify-center flex-shrink-0 text-red-600 shadow-inner">
+                <Award className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
               <div>
-                <h4 className="text-sm font-black text-gray-950 leading-tight">
+                <h4 className="text-xs sm:text-sm font-black text-gray-950 leading-tight">
                   Trusted by Players
                 </h4>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  Quality gear for better play
+                <p className="text-[11px] sm:text-xs text-gray-500 mt-0.5">
+                  ITTF Certified
                 </p>
               </div>
             </div>

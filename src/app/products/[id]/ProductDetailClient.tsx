@@ -21,6 +21,7 @@ import {
   ArrowRight,
   Sparkles,
   AlertCircle,
+  MessageCircle,
 } from "lucide-react";
 import { PRODUCTS, Product } from "@/data/products";
 import { useCartStore } from "@/store/useCartStore";
@@ -675,6 +676,19 @@ export default function ProductDetailClient({ productId }: { productId: string }
                   <Zap className="w-4 h-4 fill-white text-white" />
                   <span>Buy Now (Cash on Delivery)</span>
                 </button>
+
+                {/* WhatsApp Inquire Link */}
+                <a
+                  href={`https://wa.me/9779841000000?text=${encodeURIComponent(
+                    `Namaste LOKI ZONE! I want to inquire about ordering ${product.name} (NPR ${product.price.toLocaleString()}).`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full h-11 rounded-2xl font-bold text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200/80 flex items-center justify-center gap-2 transition shadow-xs"
+                >
+                  <MessageCircle className="w-4 h-4 text-emerald-600" />
+                  <span>Inquire / Order via WhatsApp</span>
+                </a>
               </div>
 
               {/* Service & Delivery Benefits Strip */}
