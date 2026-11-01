@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import { useAdminStore, AdminOrder } from "@/store/useAdminStore";
+import { extractClerkEmail } from "@/lib/adminAuth";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -49,7 +50,7 @@ export default function CheckoutPage() {
     user?.fullName ||
     [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
     "";
-  const userEmail = user?.primaryEmailAddress?.emailAddress || "";
+  const userEmail = extractClerkEmail(user) || "";
 
   // Form State - initialized clean, populated from authenticated Clerk profile if logged in
   const [formData, setFormData] = useState({

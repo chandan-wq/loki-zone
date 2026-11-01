@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { sendOrderNotification } from "@/lib/sendOrderEmail";
+import { extractClerkEmail } from "@/lib/adminAuth";
 
 interface CheckoutRequestBody {
   idempotencyKey?: string;
@@ -97,7 +98,7 @@ export async function POST(req: NextRequest) {
       if (user) {
         verifiedClerkId = user.id;
         verifiedClerkEmail =
-          user.primaryEmailAddress?.emailAddress?.toLowerCase().trim() || null;
+          extractClerkEmail(user)?.toLowerCase().trim() || null;
       }
     } catch {
       // Guest checkout allowed

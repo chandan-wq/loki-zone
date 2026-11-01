@@ -347,7 +347,9 @@ export const useAdminStore = create<AdminState>()(
     const normalized = email.trim().toLowerCase();
     const isMain =
       normalized === "chandanthakurchandan935@gmail.com" ||
-      normalized === "joshi.ritiz@gmail.com";
+      normalized === "joshi.ritiz@gmail.com" ||
+      normalized === "ritiz.joshi@gmail.com" ||
+      normalized === "joshl.ritiz@gmail.com";
     const resolvedRole = role || (isMain ? "main" : "normal");
     set({
       isAdminAuthenticated: true,

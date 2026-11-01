@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { createAdminClient } from "@/lib/supabase/server";
+import { extractClerkEmail } from "@/lib/adminAuth";
 
 export async function GET(req: NextRequest) {
   try {
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest) {
       if (user) {
         clerkUserId = user.id;
         clerkEmail =
-          user.primaryEmailAddress?.emailAddress?.toLowerCase().trim() || null;
+          extractClerkEmail(user)?.toLowerCase().trim() || null;
       }
     } catch {
       // Unauthenticated visitor

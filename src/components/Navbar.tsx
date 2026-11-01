@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import { useAdminStore } from "@/store/useAdminStore";
-import { resolveAdminRole } from "@/lib/adminAuth";
+import { resolveAdminRole, extractClerkEmail } from "@/lib/adminAuth";
 import SearchModal from "./SearchModal";
 
 const DEFAULT_ANNOUNCEMENT =
@@ -103,7 +103,7 @@ export default function Navbar() {
     }
   };
 
-  const userEmail = user?.primaryEmailAddress?.emailAddress || "";
+  const userEmail = extractClerkEmail(user) || "";
   const adminRole = resolveAdminRole(userEmail, user?.publicMetadata?.role);
   const isPrivilegedUser = adminRole === "main" || adminRole === "normal";
   const displayName =
