@@ -65,6 +65,16 @@ const nextConfig: NextConfig = {
         destination: "/login",
         permanent: false,
       },
+      {
+        source: "/track-order",
+        destination: "/order-tracking",
+        permanent: false,
+      },
+      {
+        source: "/track-order/:path*",
+        destination: "/order-tracking",
+        permanent: false,
+      },
     ];
   },
 };
