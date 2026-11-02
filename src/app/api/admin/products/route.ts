@@ -153,6 +153,77 @@ export async function POST(req: NextRequest) {
   }
 }
 
+export async function PATCH(req: NextRequest) {
+  try {
+    const adminSession = await getVerifiedAdmin(req);
+
+    if (!adminSession.authorized) {
+      return NextResponse.json(
+        { success: false, error: "Access denied. Admin role required." },
+        { status: 403 }
+      );
+    }
+
+    const body = await req.json();
+    const { id, stockCount, price, inStock, isActive } = body;
+
+    if (!id || typeof id !== "string") {
+      return NextResponse.json(
+        { success: false, error: "Product ID is required." },
+        { status: 400 }
+      );
+    }
+
+    const updateData: Record<string, any> = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (typeof stockCount === "number") {
+      updateData.stock_count = Math.max(0, stockCount);
+      updateData.in_stock = stockCount > 0;
+    }
+
+    if (typeof inStock === "boolean") {
+      updateData.in_stock = inStock;
+    }
+
+    if (typeof price === "number" && price >= 0) {
+      updateData.price = price;
+    }
+
+    if (typeof isActive === "boolean") {
+      updateData.is_active = isActive;
+    }
+
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from("products")
+      .update(updateData)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("[Admin Product PATCH Error]:", error);
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      product: data,
+    });
+  } catch (err) {
+    console.error("[Admin Products PATCH Error]:", err);
+    return NextResponse.json(
+      { success: false, error: "Internal server error updating product field." },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(req: NextRequest) {
   try {
     const adminSession = await getVerifiedAdmin(req);

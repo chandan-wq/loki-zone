@@ -58,6 +58,9 @@ import {
   Palette,
 } from "lucide-react";
 import LandingPageCMSStudio from "@/components/admin/LandingPageCMSStudio";
+import ProductImagePicker from "@/components/admin/ProductImagePicker";
+import CourierDispatchSlip from "@/components/admin/CourierDispatchSlip";
+import WholesaleRateMatrix from "@/components/admin/WholesaleRateMatrix";
 import {
   useAdminStore,
   HeroSlideCMS,
@@ -347,6 +350,7 @@ export default function AdminDashboardPage() {
   const [orderSearch, setOrderSearch] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
   const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState<AdminOrder | null>(null);
+  const [selectedCourierSlipOrder, setSelectedCourierSlipOrder] = useState<AdminOrder | null>(null);
   const [courierNoteInput, setCourierNoteInput] = useState("");
 
   // 5. COUPONS STATE
@@ -569,13 +573,13 @@ export default function AdminDashboardPage() {
     const target = products.find((p) => p.id === id);
     if (!target) return;
     const newCount = Math.max(0, target.stockCount + delta);
-    const updatedProduct = { ...target, stockCount: newCount, inStock: newCount > 0 };
+    showToast(`📦 "${target.name}" stock: ${newCount} units`);
     try {
       const headers = await getAdminAuthHeaders();
       await fetch("/api/admin/products", {
-        method: "POST",
+        method: "PATCH",
         headers,
-        body: JSON.stringify(updatedProduct),
+        body: JSON.stringify({ id, stockCount: newCount, inStock: newCount > 0 }),
       });
     } catch (err) {
       console.error("Failed to persist stock update:", err);
@@ -586,13 +590,13 @@ export default function AdminDashboardPage() {
     updateProduct(id, { price: newPrice });
     const target = products.find((p) => p.id === id);
     if (!target) return;
-    const updatedProduct = { ...target, price: newPrice };
+    showToast(`💰 "${target.name}" price: NPR ${newPrice.toLocaleString()}`);
     try {
       const headers = await getAdminAuthHeaders();
       await fetch("/api/admin/products", {
-        method: "POST",
+        method: "PATCH",
         headers,
-        body: JSON.stringify(updatedProduct),
+        body: JSON.stringify({ id, price: newPrice }),
       });
     } catch (err) {
       console.error("Failed to persist price update:", err);
@@ -1375,28 +1379,61 @@ export default function AdminDashboardPage() {
                           </td>
                           {/* Live Stock Adjustment: Available for both roles */}
                           <td className="py-3 px-4 text-center">
-                            <div className="inline-flex items-center gap-2 bg-[#0b0f17] border border-slate-800 rounded-xl px-2 py-1">
-                              <button
-                                onClick={() => handleStockAdjust(p.id, -1)}
-                                className="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center font-bold text-xs transition"
-                                title="Decrease Stock (-1)"
-                              >
-                                -
-                              </button>
+                            <div className="flex flex-col items-center gap-1">
+                              <div className="inline-flex items-center gap-1.5 bg-[#0b0f17] border border-slate-800 rounded-xl px-2 py-1 shadow-inner">
+                                <button
+                                  type="button"
+                                  onClick={() => handleStockAdjust(p.id, -1)}
+                                  className="w-6 h-6 rounded-lg bg-slate-800 hover:bg-red-600/40 text-slate-300 hover:text-white flex items-center justify-center font-bold text-xs transition active:scale-95"
+                                  title="Decrease Stock (-1)"
+                                >
+                                  -
+                                </button>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  key={p.stockCount}
+                                  defaultValue={p.stockCount}
+                                  onBlur={(e) => {
+                                    const val = Math.max(0, Number(e.target.value) || 0);
+                                    if (val !== p.stockCount) {
+                                      handleStockAdjust(p.id, val - p.stockCount);
+                                    }
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.currentTarget.blur();
+                                    }
+                                  }}
+                                  className={`w-12 text-center font-mono font-bold text-xs bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-red-500 rounded ${
+                                    p.stockCount === 0
+                                      ? "text-red-400 font-black"
+                                      : p.stockCount <= 5
+                                      ? "text-amber-400"
+                                      : "text-emerald-400"
+                                  }`}
+                                  title="Click to type exact stock or use + / -"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleStockAdjust(p.id, 1)}
+                                  className="w-6 h-6 rounded-lg bg-slate-800 hover:bg-emerald-600/40 text-slate-300 hover:text-white flex items-center justify-center font-bold text-xs transition active:scale-95"
+                                  title="Increase Stock (+1)"
+                                >
+                                  +
+                                </button>
+                              </div>
                               <span
-                                className={`w-10 text-center font-mono font-bold text-xs ${
-                                  p.stockCount <= 5 ? "text-amber-400" : "text-emerald-400"
+                                className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full ${
+                                  p.stockCount === 0
+                                    ? "bg-red-950/60 text-red-400 border border-red-800/60"
+                                    : p.stockCount <= 5
+                                    ? "bg-amber-950/60 text-amber-400 border border-amber-800/60"
+                                    : "bg-emerald-950/40 text-emerald-400 border border-emerald-800/40"
                                 }`}
                               >
-                                {p.stockCount}
+                                {p.stockCount === 0 ? "Out of Stock" : p.stockCount <= 5 ? "Low Stock" : "In Stock"}
                               </span>
-                              <button
-                                onClick={() => handleStockAdjust(p.id, 1)}
-                                className="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center font-bold text-xs transition"
-                                title="Increase Stock (+1)"
-                              >
-                                +
-                              </button>
                             </div>
                           </td>
                           {/* Price: Inline edit for Master; clean text for Staff */}
@@ -1970,115 +2007,21 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          {/* TAB 4: WHOLESALE BULK RATE SHEETS */}
+          {/* TAB 4: WHOLESALE BULK RATE SHEETS & LIVE CALCULATOR */}
           {activeTab === "rates" && (
-            <div className="space-y-6">
-              <div className="bg-[#121824] border border-slate-800 rounded-2xl p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-bold text-[10px]">
-                        ACTIVE RATE MATRIX
-                      </span>
-                      <span className="text-xs text-slate-400">v4.2 Q4</span>
-                    </div>
-                    <h2 className="text-xl font-black text-white mt-2">
-                      LOKI Official Wholesale Price Matrix Q4 2026
-                    </h2>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Validity Period: <strong className="text-slate-200">2026-10-01 to 2026-12-31</strong> • Approver: <strong className="text-slate-200">Chandan Thakur</strong>
-                    </p>
-                  </div>
-                  {/* Actions ONLY for Main Admin */}
-                  {isMaster && (
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setIsAddRateItemOpen(true)}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-red-600/30"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>Add Rate Item</span>
-                      </button>
-                      <button
-                        onClick={() => setIsUploadSheetOpen(true)}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition"
-                      >
-                        <UploadCloud className="w-3.5 h-3.5" />
-                        <span>Upload Sheet</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Rate Matrix Table with Edit/Delete for Master */}
-              <div className="bg-[#121824] border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-                <div className="p-4 border-b border-slate-800 flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-                    <span>Tiered Quantity Price Matrix (NPR)</span>
-                  </h3>
-                  <span className="text-xs text-slate-400">
-                    {isMaster ? "Full Edit & Add Privileges" : "Staff Quote Lookup Desk"}
-                  </span>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="border-b border-slate-800 text-slate-400 font-bold bg-[#0d121c]">
-                        <th className="py-3 px-4">Item SKU &amp; Name</th>
-                        <th className="py-3 px-4">Standard Retail (1-9 pcs)</th>
-                        <th className="py-3 px-4 text-emerald-400">Wholesale Tier (10-49 pcs) [-15%]</th>
-                        <th className="py-3 px-4 text-amber-400">Club Bulk Tier (50+ pcs) [-25%]</th>
-                        {isMaster && <th className="py-3 px-4 text-right">Actions</th>}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800/60">
-                      {rateSheetItems.map((item) => (
-                        <tr key={item.sku} className="hover:bg-slate-800/20 transition">
-                          <td className="py-3.5 px-4">
-                            <div className="font-bold text-white">{item.name}</div>
-                            <div className="text-[10px] text-slate-400 font-mono">{item.sku}</div>
-                          </td>
-                          <td className="py-3.5 px-4 font-mono font-bold text-slate-300">
-                            Rs. {item.retailNPR.toLocaleString()}
-                          </td>
-                          <td className="py-3.5 px-4 font-mono font-bold text-emerald-400">
-                            Rs. {item.tier10_49.toLocaleString()}
-                          </td>
-                          <td className="py-3.5 px-4 font-mono font-bold text-amber-400">
-                            Rs. {item.tier50plus.toLocaleString()}
-                          </td>
-                          {isMaster && (
-                            <td className="py-3.5 px-4 text-right">
-                              <div className="flex items-center justify-end gap-1">
-                                <button
-                                  onClick={() => {
-                                    setEditingRateItem({ ...item });
-                                    setIsEditRateItemOpen(true);
-                                  }}
-                                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
-                                  title="Edit Rate Item"
-                                >
-                                  <Edit className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteRateItem(item.sku, item.name)}
-                                  className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition"
-                                  title="Delete Item"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </td>
-                          )}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
+            <WholesaleRateMatrix
+              isMaster={isMaster}
+              rateSheetItems={rateSheetItems}
+              onAddRateItem={addRateSheetItem}
+              onUpdateRateItem={updateRateSheetItem}
+              onDeleteRateItem={(sku, name) => {
+                if (confirm(`Are you sure you want to remove "${name}" from wholesale rate matrix?`)) {
+                  deleteRateSheetItem(sku);
+                  showToast(`🗑️ Removed "${name}" from rate matrix.`);
+                }
+              }}
+              showToast={showToast}
+            />
           )}
 
           {/* TAB 5: ORDERS & COURIER DISPATCH */}
@@ -2183,6 +2126,14 @@ export default function AdminDashboardPage() {
                           </td>
                           <td className="py-3 px-4 text-right">
                             <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => setSelectedCourierSlipOrder(o)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 font-bold text-[11px] border border-amber-500/20 transition"
+                                title="Print Official Courier Dispatch Slip (A5 / A6)"
+                              >
+                                <Truck className="w-3.5 h-3.5" />
+                                <span>Slip</span>
+                              </button>
                               <button
                                 onClick={() => {
                                   setSelectedInvoiceOrder(o);
@@ -2919,15 +2870,11 @@ export default function AdminDashboardPage() {
                   <p className="text-[11px] text-slate-400">Protective gear, ITTF rubber sheets, edge tapes, and tournament accessories.</p>
                 </div>
               )}
-              <div>
-                <label className="block font-bold text-slate-300 mb-1">Image URL</label>
-                <input
-                  type="text"
-                  value={newProd.image}
-                  onChange={(e) => setNewProd({ ...newProd, image: e.target.value })}
-                  className="w-full px-3 py-2 bg-[#0b0f17] border border-slate-700 rounded-xl text-white focus:outline-none focus:border-red-500"
-                />
-              </div>
+              <ProductImagePicker
+                value={newProd.image}
+                onChange={(url) => setNewProd({ ...newProd, image: url })}
+                getAdminAuthHeaders={getAdminAuthHeaders}
+              />
               <div>
                 <label className="block font-bold text-slate-300 mb-1">Product Description</label>
                 <textarea
@@ -3106,15 +3053,15 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
               )}
-              <div>
-                <label className="block font-bold text-slate-300 mb-1">Image URL</label>
-                <input
-                  type="text"
-                  value={editingProduct.image}
-                  onChange={(e) => setEditingProduct({ ...editingProduct, image: e.target.value })}
-                  className="w-full px-3 py-2 bg-[#0b0f17] border border-slate-700 rounded-xl text-white"
-                />
-              </div>
+              <ProductImagePicker
+                value={editingProduct.image}
+                onChange={(url) => setEditingProduct({ ...editingProduct, image: url })}
+                additionalImages={editingProduct.additionalImages || []}
+                onChangeAdditionalImages={(imgs) =>
+                  setEditingProduct({ ...editingProduct, additionalImages: imgs })
+                }
+                getAdminAuthHeaders={getAdminAuthHeaders}
+              />
               <div>
                 <label className="block font-bold text-slate-300 mb-1">Description</label>
                 <textarea
@@ -3335,11 +3282,20 @@ export default function AdminDashboardPage() {
 
               <div className="flex items-center gap-2">
                 <button
+                  type="button"
+                  onClick={() => setSelectedCourierSlipOrder(selectedInvoiceOrder)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold transition text-xs shadow-md shadow-amber-600/30"
+                  title="Open Official A5/A6 Courier Shipping Label"
+                >
+                  <Truck className="w-3.5 h-3.5" />
+                  <span>Courier Label</span>
+                </button>
+                <button
                   onClick={() => window.print()}
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold transition shadow-md shadow-red-600/30"
                 >
                   <Printer className="w-3.5 h-3.5" />
-                  <span>Print Slip</span>
+                  <span>Print Invoice</span>
                 </button>
                 <button
                   onClick={() => setSelectedInvoiceOrder(null)}
@@ -3351,6 +3307,23 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ========================================================
+          MODAL: OFFICIAL COURIER DISPATCH SLIP / A5 LABEL
+          ======================================================== */}
+      {selectedCourierSlipOrder && (
+        <CourierDispatchSlip
+          order={selectedCourierSlipOrder}
+          onClose={() => setSelectedCourierSlipOrder(null)}
+          onStatusChange={(newStatus) => {
+            updateOrderStatus(selectedCourierSlipOrder.id, newStatus);
+            setSelectedCourierSlipOrder({
+              ...selectedCourierSlipOrder,
+              status: newStatus,
+            });
+          }}
+        />
       )}
 
       {/* ========================================================

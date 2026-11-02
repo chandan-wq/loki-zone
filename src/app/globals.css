@@ -89,3 +89,32 @@ h1, h2, h3, h4, h5, h6 {
   background-clip: text !important;
   -webkit-background-clip: text !important;
 }
+
+/* Dedicated Print Stylesheet for Official Courier Dispatch Slip */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  body * {
+    visibility: hidden;
+  }
+  #courier-dispatch-printable-slip,
+  #courier-dispatch-printable-slip * {
+    visibility: visible;
+  }
+  #courier-dispatch-printable-slip {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 8mm;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  @page {
+    size: A5 portrait;
+    margin: 6mm;
+  }
+}

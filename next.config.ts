@@ -28,6 +28,11 @@ const nextConfig: NextConfig = {
         hostname: "acp-aep-cs-blobstore-prod-jpn3-data.adobe.io",
         pathname: "**",
       },
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+        pathname: "**",
+      },
     ],
   },
   turbopack: {
