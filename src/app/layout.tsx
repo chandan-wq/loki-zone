@@ -20,9 +20,46 @@ export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_APP_URL || "https://loki-zone.vercel.app"
   ),
-  title: "LOKI ZONE | Official Table Tennis Gear & Equipment",
+  title: {
+    default: "LOKI ZONE | Official Table Tennis Gear & Equipment Nepal",
+    template: "%s | LOKI ZONE Nepal",
+  },
   description:
-    "Official LOKI table tennis store. Explore tournament-approved rackets, high-spin rubber blades, apparel, shoes, and ITTF balls. Free delivery over NPR 2,000.",
+    "Official LOKI table tennis store in Nepal. Explore ITTF-approved tournament rackets, carbon blades, high-tension rubbers, match apparel, court shoes, and 3-star balls. Free nationwide delivery over NPR 2,000.",
+  keywords: [
+    "table tennis Nepal",
+    "LOKI table tennis",
+    "TT racket Nepal",
+    "table tennis rubber",
+    "ping pong gear Kathmandu",
+    "ITTF approved balls",
+    "Ritiz TT Goods Nepal",
+  ],
+  authors: [{ name: "LOKI ZONE Nepal" }],
+  openGraph: {
+    type: "website",
+    locale: "en_NP",
+    url: "https://loki-zone.vercel.app",
+    siteName: "LOKI ZONE Nepal",
+    title: "LOKI ZONE | Official Table Tennis Gear & Equipment Nepal",
+    description:
+      "Official LOKI table tennis store in Nepal. ITTF tournament rackets, carbon blades, apparel, shoes, and accessories.",
+    images: [
+      {
+        url: "/images/hero-bg.jpg",
+        width: 1200,
+        height: 630,
+        alt: "LOKI ZONE Nepal Table Tennis Equipment",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "LOKI ZONE | Official Table Tennis Gear & Equipment Nepal",
+    description:
+      "Official LOKI table tennis store in Nepal. ITTF tournament rackets, carbon blades, and competition equipment.",
+    images: ["/images/hero-bg.jpg"],
+  },
 };
 
 export default function RootLayout({

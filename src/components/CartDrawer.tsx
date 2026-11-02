@@ -346,7 +346,16 @@ export default function CartDrawer() {
                 >
                   Proceed to Checkout <ArrowRight className="w-4 h-4" />
                 </Link>
-                <div className="flex items-center justify-center gap-1.5 text-xs text-gray-500 pt-1">
+
+                <Link
+                  href="/cart"
+                  onClick={closeCart}
+                  className="w-full py-2.5 text-center text-xs font-bold text-gray-700 hover:text-red-600 transition block"
+                >
+                  View Full Bag &amp; Add Notes ↩
+                </Link>
+
+                <div className="flex items-center justify-center gap-1.5 text-xs text-gray-500 pt-0.5">
                   <ShieldCheck className="w-4 h-4 text-emerald-600" />
                   <span>Secure 256-bit encrypted checkout</span>
                 </div>

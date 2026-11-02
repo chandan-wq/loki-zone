@@ -13,6 +13,7 @@ import {
   Printer,
   ShieldCheck,
   MapPin,
+  Truck,
 } from "lucide-react";
 import { useAdminStore } from "@/store/useAdminStore";
 
@@ -160,8 +161,16 @@ function OrderConfirmationContent() {
           {/* Action CTAs */}
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
+              href={`/order-tracking?id=${encodeURIComponent(orderId)}`}
+              className="w-full sm:w-auto px-7 py-3.5 bg-red-600 hover:bg-red-700 text-white rounded-full text-xs font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-red-600/25"
+            >
+              <Truck className="w-4 h-4" />
+              <span>Live Track This Order</span>
+            </Link>
+
+            <Link
               href="/"
-              className="w-full sm:w-auto px-8 py-3.5 bg-black hover:bg-neutral-800 text-white rounded-full text-xs font-bold transition flex items-center justify-center gap-2 shadow-lg"
+              className="w-full sm:w-auto px-7 py-3.5 bg-black hover:bg-neutral-800 text-white rounded-full text-xs font-bold transition flex items-center justify-center gap-2 shadow-lg"
             >
               <span>Continue Shopping</span>
               <ArrowRight className="w-4 h-4" />
