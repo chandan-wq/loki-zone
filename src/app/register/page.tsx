@@ -14,6 +14,8 @@ import {
   EyeOff,
   ShieldCheck,
   CheckCircle2,
+  ShoppingBag,
+  Store,
 } from "lucide-react";
 import { useSignIn } from "@clerk/nextjs/legacy";
 import { useUser, useClerk } from "@clerk/nextjs";
@@ -54,26 +56,24 @@ function RegisterContent() {
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [duplicateEmail, setDuplicateEmail] = useState(false);
 
-  // Auto-redirect if already signed in
+  // Auto-redirect if redirect_url is specified (e.g. from checkout or guarded route)
   useEffect(() => {
     if (isUserLoaded && isSignedIn && user && searchParams.get("switch") !== "true") {
-      const currentEmail = extractClerkEmail(user) || "";
-      const adminRole = resolveAdminRole(currentEmail, user.publicMetadata?.role);
       const redirectUrl = searchParams.get("redirect_url");
-
-      if (adminRole) {
-        loginAdmin(currentEmail, adminRole);
-        window.location.href = redirectUrl && redirectUrl.includes("/admin") ? redirectUrl : "/admin";
-      } else {
-        window.location.href = redirectUrl || "/account";
+      if (redirectUrl) {
+        const currentEmail = extractClerkEmail(user) || "";
+        const adminRole = resolveAdminRole(currentEmail, user.publicMetadata?.role);
+        if (adminRole) loginAdmin(currentEmail, adminRole);
+        window.location.href = redirectUrl;
       }
     }
   }, [isUserLoaded, isSignedIn, user, searchParams, loginAdmin]);
 
-  // If already signed in, show clean switch/continue prompt while redirecting
+  // If already signed in, show clean multi-destination navigation hub
   if (isUserLoaded && isSignedIn && user && searchParams.get("switch") !== "true") {
     const currentEmail = extractClerkEmail(user) || "";
     const adminRole = resolveAdminRole(currentEmail, user.publicMetadata?.role);
+    const greetingName = user.firstName || currentEmail.split("@")[0] || "User";
 
     return (
       <div className="min-h-screen bg-gray-50/70 flex items-center justify-center py-12 px-4 sm:px-6">
@@ -86,38 +86,61 @@ function RegisterContent() {
             <h2 className="text-2xl font-black text-gray-950 tracking-tight">
               Already Signed In
             </h2>
-            <p className="text-xs text-gray-500 mt-1.5">
-              You are currently authenticated as:
+            <p className="text-xs text-gray-500 mt-1">
+              Welcome back, <span className="font-bold text-gray-800">{greetingName}</span>! Choose your destination:
             </p>
-            <div className="mt-2 py-1.5 px-3 bg-gray-50 border border-gray-200 rounded-xl inline-block max-w-full">
+            <div className="mt-2.5 py-1.5 px-3 bg-gray-50 border border-gray-200 rounded-xl inline-block max-w-full">
               <span className="text-xs font-bold text-gray-900 truncate block">
                 {currentEmail}
               </span>
             </div>
             {adminRole && (
-              <span className="block mt-1 text-[10px] font-extrabold text-red-600 uppercase tracking-wider">
+              <span className="block mt-1.5 text-[10px] font-extrabold text-red-600 uppercase tracking-wider">
                 👑 {adminRole === "main" ? "Store Owner / Main Admin" : "Staff Desk"}
               </span>
             )}
           </div>
 
-          <div className="space-y-2.5 pt-2">
+          <div className="space-y-2.5 pt-1">
+            {/* 1. Admin Workspace (If Privileged) */}
+            {adminRole && (
+              <button
+                onClick={() => {
+                  loginAdmin(currentEmail, adminRole);
+                  window.location.href = "/admin";
+                }}
+                className="w-full py-3.5 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-red-600/25 transition active:scale-[0.99]"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                <span>Open Admin Workspace</span>
+                <ArrowRight className="w-4 h-4 ml-auto" />
+              </button>
+            )}
+
+            {/* 2. Storefront / Shop */}
             <button
               onClick={() => {
-                const redirectUrl = searchParams.get("redirect_url");
-                if (adminRole) {
-                  loginAdmin(currentEmail, adminRole);
-                  window.location.href = redirectUrl && redirectUrl.includes("/admin") ? redirectUrl : "/admin";
-                } else {
-                  window.location.href = redirectUrl || "/account";
-                }
+                window.location.href = "/";
               }}
-              className="w-full py-3.5 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-red-600/25 transition active:scale-[0.99]"
+              className="w-full py-3.5 bg-slate-900 hover:bg-black text-white rounded-2xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition active:scale-[0.99]"
             >
-              <span>Continue to {adminRole ? "Admin Workspace" : "My Account"}</span>
-              <ArrowRight className="w-4 h-4" />
+              <ShoppingBag className="w-4 h-4 text-slate-300" />
+              <span>Browse Storefront &amp; Shop</span>
+              <ArrowRight className="w-4 h-4 ml-auto text-slate-400" />
             </button>
 
+            {/* 3. Customer Account */}
+            <button
+              onClick={() => {
+                window.location.href = "/account";
+              }}
+              className="w-full py-3 bg-white hover:bg-gray-50 text-gray-800 border border-gray-200 rounded-2xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition active:scale-[0.99]"
+            >
+              <User className="w-4 h-4 text-gray-500" />
+              <span>My Account &amp; Orders</span>
+            </button>
+
+            {/* 4. Sign Out */}
             <button
               onClick={async () => {
                 setLoading(true);
@@ -129,7 +152,7 @@ function RegisterContent() {
                 }
               }}
               disabled={loading}
-              className="w-full py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-2xl font-bold text-xs uppercase tracking-wider transition active:scale-[0.99] disabled:opacity-50"
+              className="w-full py-2.5 text-gray-500 hover:text-red-600 text-xs font-semibold transition disabled:opacity-50"
             >
               {loading ? "Signing out..." : "Sign Out & Register New Account"}
             </button>

@@ -17,6 +17,7 @@ import {
   Phone,
   Mail,
   ShieldAlert,
+  ShieldCheck,
 } from "lucide-react";
 import { PRODUCTS } from "@/data/products";
 import { useAdminStore } from "@/store/useAdminStore";
@@ -254,6 +255,21 @@ export default function AccountPage() {
               </div>
               <ChevronRight className="w-4 h-4" />
             </Link>
+
+            {adminRole && (
+              <Link
+                href="/admin"
+                className="w-full text-left px-4 py-3 rounded-2xl text-xs font-bold flex items-center justify-between bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/20 transition mt-3"
+              >
+                <div className="flex items-center gap-3">
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Admin Workspace</span>
+                </div>
+                <span className="text-[10px] uppercase font-black bg-white/20 px-2 py-0.5 rounded-full">
+                  {adminRole === "main" ? "Owner" : "Staff"}
+                </span>
+              </Link>
+            )}
           </div>
 
           {/* Tab Content (9 cols) */}
