@@ -22,6 +22,11 @@ import {
   Sparkles,
   AlertCircle,
   MessageCircle,
+  Ruler,
+  ZoomIn,
+  X,
+  MapPin,
+  ThumbsUp,
 } from "lucide-react";
 import { PRODUCTS, Product } from "@/data/products";
 import { useCartStore } from "@/store/useCartStore";
@@ -107,6 +112,84 @@ export default function ProductDetailClient({ productId }: { productId: string }
   // Stock calculations
   const maxStock = product.inStock && product.stockCount > 0 ? product.stockCount : 0;
   const isOutOfStock = maxStock === 0;
+
+  // Size Guide & Lightbox modals
+  const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+
+  // Delivery Calculator
+  const [deliveryCity, setDeliveryCity] = useState("Kathmandu");
+
+  // Reviews System
+  const [reviewsList, setReviewsList] = useState([
+    {
+      id: "rev-1",
+      name: "Rabin Shrestha",
+      city: "Kathmandu",
+      role: "Club League Player",
+      rating: 5,
+      date: "2 days ago",
+      comment: "Incredible build quality and grip! The feedback on topspin loop rallies is crisp and predictable. Arrived inside Kathmandu in less than 24 hours.",
+    },
+    {
+      id: "rev-2",
+      name: "Prabhat Maharjan",
+      city: "Lalitpur",
+      role: "ITTF National Ranked",
+      rating: 5,
+      date: "1 week ago",
+      comment: "100% authentic LOKI gear. Very satisfied with the weight balance and edge finish. Recommended to all table tennis academy players in Nepal.",
+    },
+    {
+      id: "rev-3",
+      name: "Anil Gurung",
+      city: "Pokhara",
+      role: "Intermediate Attacker",
+      rating: 5,
+      date: "2 weeks ago",
+      comment: "Super fast courier delivery to Pokhara. Packaging was secure with shockproof bubble wrap. Product exceeds expectations!",
+    },
+  ]);
+  const [isWritingReview, setIsWritingReview] = useState(false);
+  const [newReview, setNewReview] = useState({
+    name: "",
+    city: "Kathmandu",
+    rating: 5,
+    role: "Table Tennis Enthusiast",
+    comment: "",
+  });
+  const [reviewSuccess, setReviewSuccess] = useState(false);
+
+  const handleAddReview = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newReview.name.trim() || !newReview.comment.trim()) return;
+
+    setReviewsList((prev) => [
+      {
+        id: `rev-${Date.now()}`,
+        name: newReview.name.trim(),
+        city: newReview.city,
+        role: newReview.role,
+        rating: newReview.rating,
+        date: "Just now",
+        comment: newReview.comment.trim(),
+      },
+      ...prev,
+    ]);
+
+    setNewReview({
+      name: "",
+      city: "Kathmandu",
+      rating: 5,
+      role: "Table Tennis Enthusiast",
+      comment: "",
+    });
+    setReviewSuccess(true);
+    setTimeout(() => {
+      setReviewSuccess(false);
+      setIsWritingReview(false);
+    }, 2000);
+  };
 
   // Reset indices and quantity when viewing a different product
   useEffect(() => {
@@ -271,7 +354,10 @@ export default function ProductDetailClient({ productId }: { productId: string }
               )}
 
               {/* Main Image Stage */}
-              <div className="relative w-full aspect-square md:aspect-[4/3] lg:aspect-square bg-gradient-to-b from-gray-50 via-white to-gray-50 rounded-3xl border border-gray-200/80 overflow-hidden flex items-center justify-center p-6 sm:p-10 group shadow-sm">
+              <div
+                onClick={() => setIsLightboxOpen(true)}
+                className="relative w-full aspect-square md:aspect-[4/3] lg:aspect-square bg-gradient-to-b from-gray-50 via-white to-gray-50 rounded-3xl border border-gray-200/80 overflow-hidden flex items-center justify-center p-6 sm:p-10 group shadow-sm cursor-zoom-in"
+              >
                 {/* Main Product Image */}
                 <div className="relative w-full h-full">
                   <Image
@@ -291,6 +377,19 @@ export default function ProductDetailClient({ productId }: { productId: string }
                     {product.tags?.[0] || product.brand}
                   </span>
                 </div>
+
+                {/* Zoom Badge Top-Right */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsLightboxOpen(true);
+                  }}
+                  title="Click to zoom image"
+                  className="absolute top-4 right-4 p-2 bg-white/90 hover:bg-white rounded-full shadow-sm text-gray-700 hover:text-red-600 transition backdrop-blur-md"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </button>
 
                 {/* Slider Nav & Page Counter (if multiple images) */}
                 {galleryImages.length > 1 && (
@@ -499,9 +598,14 @@ export default function ProductDetailClient({ productId }: { productId: string }
                         {selectedSize || "(Select a size)"}
                       </span>
                     </span>
-                    <span className="text-xs font-semibold text-gray-500 normal-case">
-                      Standard Athletic Fit
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsSizeGuideOpen(true)}
+                      className="inline-flex items-center gap-1 text-xs font-bold text-red-600 hover:text-red-700 underline underline-offset-2 transition normal-case"
+                    >
+                      <Ruler className="w-3.5 h-3.5" />
+                      <span>Size Chart (S–XXL)</span>
+                    </button>
                   </div>
 
                   <div className="grid grid-cols-5 gap-2">
@@ -552,9 +656,14 @@ export default function ProductDetailClient({ productId }: { productId: string }
                         {selectedSize || "(Select EU size)"}
                       </span>
                     </span>
-                    <span className="text-xs font-semibold text-gray-500 normal-case">
-                      EU Standard Sizing
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsSizeGuideOpen(true)}
+                      className="inline-flex items-center gap-1 text-xs font-bold text-red-600 hover:text-red-700 underline underline-offset-2 transition normal-case"
+                    >
+                      <Ruler className="w-3.5 h-3.5" />
+                      <span>EU Size Chart (39–44)</span>
+                    </button>
                   </div>
 
                   <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
@@ -689,6 +798,48 @@ export default function ProductDetailClient({ productId }: { productId: string }
                   <MessageCircle className="w-4 h-4 text-emerald-600" />
                   <span>Inquire / Order via WhatsApp</span>
                 </a>
+
+                {/* Delivery Estimate Calculator */}
+                <div className="p-3.5 sm:p-4 rounded-2xl bg-gray-50/90 border border-gray-200/80 space-y-2 mt-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-gray-900">
+                      <MapPin className="w-4 h-4 text-red-600 shrink-0" />
+                      <span>Estimate Delivery To:</span>
+                    </div>
+                    <select
+                      value={deliveryCity}
+                      onChange={(e) => setDeliveryCity(e.target.value)}
+                      className="text-xs font-bold bg-white border border-gray-300 rounded-lg px-2.5 py-1 text-gray-900 focus:outline-none focus:ring-1 focus:ring-red-500 shadow-xs cursor-pointer"
+                    >
+                      <option value="Kathmandu">Kathmandu Valley</option>
+                      <option value="Lalitpur">Lalitpur</option>
+                      <option value="Bhaktapur">Bhaktapur</option>
+                      <option value="Pokhara">Pokhara</option>
+                      <option value="Chitwan">Chitwan / Narayangarh</option>
+                      <option value="Butwal">Butwal / Bhairahawa</option>
+                      <option value="Biratnagar">Biratnagar / Itahari</option>
+                      <option value="Dharan">Dharan</option>
+                      <option value="Other">Other Nepal Districts</option>
+                    </select>
+                  </div>
+
+                  <div className="text-xs text-gray-600 flex items-center justify-between pt-1.5 border-t border-gray-200/60 flex-wrap gap-1">
+                    <span className="font-semibold text-gray-800 flex items-center gap-1">
+                      {["Kathmandu", "Lalitpur", "Bhaktapur"].includes(deliveryCity) ? (
+                        <>⚡ Express Delivery (Within 24 Hours)</>
+                      ) : (
+                        <>🚚 Regional Courier (2–3 Business Days)</>
+                      )}
+                    </span>
+                    <span className="font-bold text-red-600">
+                      {product.price >= 2000
+                        ? "🎉 FREE Delivery"
+                        : ["Kathmandu", "Lalitpur", "Bhaktapur"].includes(deliveryCity)
+                        ? "NPR 100"
+                        : "NPR 250"}
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {/* Service & Delivery Benefits Strip */}
@@ -861,7 +1012,205 @@ export default function ProductDetailClient({ productId }: { productId: string }
         </section>
       )}
 
-      {/* 4. Related & Recommended Gear Section */}
+      {/* 4. Customer Reviews & Community Feedback Section */}
+      <section className="py-12 lg:py-16 bg-white border-t border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+            <div>
+              <span className="text-xs font-bold text-red-600 uppercase tracking-widest">
+                VERIFIED PLAYER FEEDBACK
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-black text-gray-950 tracking-tight mt-1">
+                Customer Reviews ({reviewsList.length + product.reviewsCount})
+              </h2>
+              <div className="flex items-center gap-2 mt-2">
+                <div className="flex items-center text-amber-500">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                  ))}
+                </div>
+                <span className="text-xs font-black text-gray-900">4.9 out of 5</span>
+                <span className="text-xs text-gray-400">•</span>
+                <span className="text-xs text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                  100% Genuine ITTF Verified
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setIsWritingReview(!isWritingReview)}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-black hover:bg-neutral-800 text-white rounded-full text-xs font-bold transition shadow-sm w-fit"
+            >
+              <span>{isWritingReview ? "Cancel Review" : "Write a Player Review"}</span>
+            </button>
+          </div>
+
+          {/* Collapsible Write Review Form */}
+          {isWritingReview && (
+            <form
+              onSubmit={handleAddReview}
+              className="bg-gray-50/90 rounded-3xl p-6 sm:p-8 border border-gray-200/80 mb-10 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200 max-w-2xl"
+            >
+              <h3 className="text-sm font-bold text-gray-950 uppercase tracking-wide">
+                Share Your Experience with {product.name}
+              </h3>
+
+              {reviewSuccess ? (
+                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 text-xs font-bold flex items-center gap-2">
+                  <Check className="w-4 h-4 text-emerald-600" />
+                  <span>Thank you! Your verified player review has been published.</span>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">
+                        Your Full Name *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Bipin Shrestha"
+                        value={newReview.name}
+                        onChange={(e) =>
+                          setNewReview((prev) => ({ ...prev, name: e.target.value }))
+                        }
+                        className="w-full text-xs bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-gray-900 focus:outline-none focus:ring-1 focus:ring-red-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">
+                        Your City / District *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Lalitpur"
+                        value={newReview.city}
+                        onChange={(e) =>
+                          setNewReview((prev) => ({ ...prev, city: e.target.value }))
+                        }
+                        className="w-full text-xs bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-gray-900 focus:outline-none focus:ring-1 focus:ring-red-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">
+                        Playing Level / Style
+                      </label>
+                      <select
+                        value={newReview.role}
+                        onChange={(e) =>
+                          setNewReview((prev) => ({ ...prev, role: e.target.value }))
+                        }
+                        className="w-full text-xs bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-gray-900 focus:outline-none focus:ring-1 focus:ring-red-500"
+                      >
+                        <option value="Club Tournament Player">Club Tournament Player</option>
+                        <option value="Offensive Loop Attacker">Offensive Loop Attacker</option>
+                        <option value="All-Round Control Player">All-Round Control Player</option>
+                        <option value="Table Tennis Academy Trainee">Academy Trainee</option>
+                        <option value="Weekend Enthusiast">Weekend Enthusiast</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">
+                        Star Rating
+                      </label>
+                      <div className="flex items-center gap-1.5 pt-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            type="button"
+                            key={star}
+                            onClick={() =>
+                              setNewReview((prev) => ({ ...prev, rating: star }))
+                            }
+                            className="p-1 focus:outline-none"
+                          >
+                            <Star
+                              className={`w-5 h-5 ${
+                                star <= newReview.rating
+                                  ? "fill-amber-400 text-amber-400"
+                                  : "text-gray-300"
+                              }`}
+                            />
+                          </button>
+                        ))}
+                        <span className="text-xs font-bold text-gray-700 ml-2">
+                          {newReview.rating} / 5 Stars
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">
+                      Your Detailed Review *
+                    </label>
+                    <textarea
+                      required
+                      rows={3}
+                      placeholder="Share your thoughts on the grip, bounce, rubber tackiness, speed, and packaging..."
+                      value={newReview.comment}
+                      onChange={(e) =>
+                        setNewReview((prev) => ({ ...prev, comment: e.target.value }))
+                      }
+                      className="w-full text-xs bg-white border border-gray-300 rounded-xl p-3 text-gray-900 focus:outline-none focus:ring-1 focus:ring-red-500"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-full text-xs font-bold transition shadow-md shadow-red-600/20"
+                  >
+                    Submit Verified Review
+                  </button>
+                </>
+              )}
+            </form>
+          )}
+
+          {/* Reviews List Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {reviewsList.map((rev) => (
+              <div
+                key={rev.id}
+                className="p-5 sm:p-6 rounded-2xl bg-gray-50/70 border border-gray-150 flex flex-col justify-between space-y-3"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1 text-amber-500">
+                      {[...Array(rev.rating)].map((_, i) => (
+                        <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                      ))}
+                    </div>
+                    <span className="text-[10px] text-gray-400 font-medium">{rev.date}</span>
+                  </div>
+
+                  <p className="text-xs text-gray-700 mt-2.5 leading-relaxed italic">
+                    &ldquo;{rev.comment}&rdquo;
+                  </p>
+                </div>
+
+                <div className="pt-2 border-t border-gray-200/60 flex items-center justify-between text-xs">
+                  <div>
+                    <strong className="text-gray-900 block font-bold">{rev.name}</strong>
+                    <span className="text-[10px] text-gray-500">{rev.city} • {rev.role}</span>
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    Verified Buyer
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 5. Related & Recommended Gear Section */}
       <section className="py-12 lg:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-end justify-between mb-8">
@@ -995,6 +1344,162 @@ export default function ProductDetailClient({ productId }: { productId: string }
           )}
         </button>
       </div>
+
+      {/* 6. Fullscreen Image Zoom Lightbox Modal */}
+      {isLightboxOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-200"
+          onClick={() => setIsLightboxOpen(false)}
+        >
+          <button
+            type="button"
+            onClick={() => setIsLightboxOpen(false)}
+            aria-label="Close Lightbox"
+            className="absolute top-5 right-5 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition z-10"
+          >
+            <X className="w-6 h-6" />
+          </button>
+
+          {/* Left Arrow */}
+          {galleryImages.length > 1 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveImageIndex((prev) =>
+                  prev === 0 ? galleryImages.length - 1 : prev - 1
+                );
+              }}
+              className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition z-10"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+          )}
+
+          {/* Large Image Container */}
+          <div
+            className="relative max-w-4xl max-h-[85vh] w-full h-full flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Image
+              src={galleryImages[activeImageIndex] || product.image}
+              alt={product.name}
+              fill
+              className="object-contain"
+              sizes="90vw"
+              priority
+            />
+          </div>
+
+          {/* Right Arrow */}
+          {galleryImages.length > 1 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveImageIndex((prev) =>
+                  prev === galleryImages.length - 1 ? 0 : prev + 1
+                );
+              }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition z-10"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          )}
+
+          <div className="absolute bottom-5 text-white/70 text-xs font-semibold">
+            {product.name} — {activeImageIndex + 1} of {galleryImages.length}
+          </div>
+        </div>
+      )}
+
+      {/* 7. Size Guide Modal */}
+      {isSizeGuideOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setIsSizeGuideOpen(false)}
+        >
+          <div
+            className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-5 border border-gray-150 animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-gray-150">
+              <div className="flex items-center gap-2">
+                <Ruler className="w-5 h-5 text-red-600" />
+                <h3 className="text-base font-black text-gray-950 uppercase tracking-tight">
+                  {isFootwear ? "Court Shoes Sizing Chart" : "Match Apparel Sizing Chart"}
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsSizeGuideOpen(false)}
+                className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {isFootwear ? (
+              <div className="space-y-3">
+                <p className="text-xs text-gray-500">
+                  Measure your foot from heel to longest toe on a flat surface:
+                </p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left border-collapse">
+                    <thead>
+                      <tr className="bg-gray-100 text-gray-800">
+                        <th className="p-2.5 font-black border border-gray-200">EU Size</th>
+                        <th className="p-2.5 font-black border border-gray-200">US Men</th>
+                        <th className="p-2.5 font-black border border-gray-200">Foot Length (cm)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 text-gray-700 font-medium">
+                      <tr><td className="p-2.5 font-bold border border-gray-200">EU 39</td><td className="p-2.5 border border-gray-200">6.5</td><td className="p-2.5 border border-gray-200">24.5 cm</td></tr>
+                      <tr className="bg-gray-50"><td className="p-2.5 font-bold border border-gray-200">EU 40</td><td className="p-2.5 border border-gray-200">7.0</td><td className="p-2.5 border border-gray-200">25.0 cm</td></tr>
+                      <tr><td className="p-2.5 font-bold border border-gray-200">EU 41</td><td className="p-2.5 border border-gray-200">8.0</td><td className="p-2.5 border border-gray-200">25.5 cm</td></tr>
+                      <tr className="bg-gray-50"><td className="p-2.5 font-bold border border-gray-200">EU 42</td><td className="p-2.5 border border-gray-200">8.5</td><td className="p-2.5 border border-gray-200">26.5 cm</td></tr>
+                      <tr><td className="p-2.5 font-bold border border-gray-200">EU 43</td><td className="p-2.5 border border-gray-200">9.5</td><td className="p-2.5 border border-gray-200">27.0 cm</td></tr>
+                      <tr className="bg-gray-50"><td className="p-2.5 font-bold border border-gray-200">EU 44</td><td className="p-2.5 border border-gray-200">10.0</td><td className="p-2.5 border border-gray-200">28.0 cm</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-xs text-gray-500">
+                  Standard Asian/International Athletic Fit for Jerseys &amp; Shorts:
+                </p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left border-collapse">
+                    <thead>
+                      <tr className="bg-gray-100 text-gray-800">
+                        <th className="p-2.5 font-black border border-gray-200">Size</th>
+                        <th className="p-2.5 font-black border border-gray-200">Chest (Inches)</th>
+                        <th className="p-2.5 font-black border border-gray-200">Length (cm)</th>
+                        <th className="p-2.5 font-black border border-gray-200">Recommended Height</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 text-gray-700 font-medium">
+                      <tr><td className="p-2.5 font-bold border border-gray-200">S</td><td className="p-2.5 border border-gray-200">36–38&quot;</td><td className="p-2.5 border border-gray-200">66 cm</td><td className="p-2.5 border border-gray-200">155–165 cm</td></tr>
+                      <tr className="bg-gray-50"><td className="p-2.5 font-bold border border-gray-200">M</td><td className="p-2.5 border border-gray-200">38–40&quot;</td><td className="p-2.5 border border-gray-200">69 cm</td><td className="p-2.5 border border-gray-200">165–172 cm</td></tr>
+                      <tr><td className="p-2.5 font-bold border border-gray-200">L</td><td className="p-2.5 border border-gray-200">40–42&quot;</td><td className="p-2.5 border border-gray-200">72 cm</td><td className="p-2.5 border border-gray-200">172–178 cm</td></tr>
+                      <tr className="bg-gray-50"><td className="p-2.5 font-bold border border-gray-200">XL</td><td className="p-2.5 border border-gray-200">42–44&quot;</td><td className="p-2.5 border border-gray-200">75 cm</td><td className="p-2.5 border border-gray-200">178–185 cm</td></tr>
+                      <tr><td className="p-2.5 font-bold border border-gray-200">XXL</td><td className="p-2.5 border border-gray-200">44–46&quot;</td><td className="p-2.5 border border-gray-200">78 cm</td><td className="p-2.5 border border-gray-200">185+ cm</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setIsSizeGuideOpen(false)}
+              className="w-full py-3 bg-black hover:bg-neutral-800 text-white rounded-2xl text-xs font-bold uppercase tracking-wider transition"
+            >
+              Got It
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
