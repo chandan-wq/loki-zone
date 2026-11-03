@@ -55,6 +55,7 @@ export async function GET(req: NextRequest) {
       salesCount: Number(p.sales_count) || 0,
       weeklyVelocity: Number(p.weekly_velocity) || 0,
       specs: p.specs || {},
+      video: p.specs?.video || (p as any).video || undefined,
     }));
 
     if (tag) {

@@ -26,6 +26,7 @@ import {
   Save,
   AlertCircle,
   ArrowRight,
+  UploadCloud,
 } from "lucide-react";
 import {
   useAdminStore,
@@ -517,7 +518,7 @@ export default function LandingPageCMSStudio() {
               </span>
             </div>
             <div className="mt-2">
-              <span className="text-[10px] block opacity-75 font-mono">SECTION 3</span>
+              <span className="text-[10px] block opacity-75 font-mono">SECTION 2</span>
               <span className="text-xs font-bold block leading-tight">Categories</span>
             </div>
           </button>
@@ -1246,10 +1247,10 @@ export default function LandingPageCMSStudio() {
               <div>
                 <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
                   <Layers className="w-5 h-5 text-red-500" />
-                  <span>Section 3: Product Category Cards</span>
+                  <span>Section 2: Shop by Category Showcase</span>
                 </h3>
                 <p className="text-xs text-slate-400 mt-1">
-                  Manage the category boxes displayed on the homepage. Edit names, links, badges, or add and delete categories freely.
+                  Customize the category showcase headline, subtitle, and badges displayed on the homepage. Changes reflect immediately on the live store.
                 </p>
               </div>
 
@@ -1377,9 +1378,38 @@ export default function LandingPageCMSStudio() {
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase">
-                        Image Path
-                      </label>
+                      <div className="flex items-center justify-between">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase">
+                          Image Path
+                        </label>
+                        <label className="cursor-pointer text-[10px] text-red-400 hover:text-red-300 font-bold flex items-center gap-0.5">
+                          <UploadCloud className="w-3 h-3" />
+                          <span>Upload File</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const f = e.target.files?.[0];
+                              if (!f) return;
+                              try {
+                                const token = await (window as any).Clerk?.session?.getToken();
+                                const headers: Record<string, string> = {};
+                                if (token) headers["Authorization"] = `Bearer ${token}`;
+                                const fd = new FormData();
+                                fd.append("file", f);
+                                const res = await fetch("/api/admin/upload", { method: "POST", headers, body: fd });
+                                const data = await res.json();
+                                if (data.success && data.url) {
+                                  updateCategoryCard(cat.id, { image: data.url });
+                                }
+                              } catch (err) {
+                                console.error("Upload error:", err);
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
                       <input
                         type="text"
                         value={cat.image}
@@ -1450,7 +1480,36 @@ export default function LandingPageCMSStudio() {
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-400 mb-1">Image Path</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-[11px] font-bold text-slate-400">Image Path</label>
+                        <label className="cursor-pointer text-[10px] text-red-400 hover:text-red-300 font-bold flex items-center gap-0.5">
+                          <UploadCloud className="w-3 h-3" />
+                          <span>Upload</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const f = e.target.files?.[0];
+                              if (!f) return;
+                              try {
+                                const token = await (window as any).Clerk?.session?.getToken();
+                                const headers: Record<string, string> = {};
+                                if (token) headers["Authorization"] = `Bearer ${token}`;
+                                const fd = new FormData();
+                                fd.append("file", f);
+                                const res = await fetch("/api/admin/upload", { method: "POST", headers, body: fd });
+                                const data = await res.json();
+                                if (data.success && data.url) {
+                                  setNewCategoryForm({ ...newCategoryForm, image: data.url });
+                                }
+                              } catch (err) {
+                                console.error("Upload error:", err);
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
                       <input
                         type="text"
                         value={newCategoryForm.image}

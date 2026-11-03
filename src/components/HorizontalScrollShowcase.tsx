@@ -9,6 +9,7 @@ import {
   ArrowRight,
   Layers,
 } from "lucide-react";
+import { useAdminStore } from "@/store/useAdminStore";
 
 /* =========================================================================
    7 FINALIZED CATEGORY COVERS (Image 1 Cover + 7 Custom Animation Videos)
@@ -332,6 +333,7 @@ function CategoryCardItem({
 }
 
 export default function HorizontalScrollShowcase() {
+  const { categorySection } = useAdminStore();
   const scrollRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -600,13 +602,14 @@ export default function HorizontalScrollShowcase() {
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-600/15 border border-red-500/30 text-red-400 text-[10px] sm:text-xs font-mono font-bold uppercase tracking-widest mb-2 sm:mb-2.5">
               <Layers className="w-3 h-3 text-red-500" />
-              <span>OFFICIAL GEAR COLLECTIONS</span>
+              <span>{categorySection?.eyebrow?.trim() || "SHOP BY CATEGORY"}</span>
             </div>
-            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white">
-              Championship Categories
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white uppercase font-sans">
+              {categorySection?.title?.trim() || "Shop by Category"}
             </h2>
-            <p className="text-xs sm:text-base text-slate-400 mt-1 sm:mt-1.5 max-w-xl font-medium leading-relaxed">
-              Explore authentic ITTF competition bats, pro tacky rubbers, tournament apparel, footwear, and club gear.
+            <p className="text-xs sm:text-base text-slate-400 mt-1 sm:mt-2 max-w-xl font-normal leading-relaxed">
+              {categorySection?.subtitle?.trim() ||
+                "Explore authentic ITTF competition bats, pro tacky rubbers, tournament apparel, footwear, and club gear."}
             </p>
           </div>
 

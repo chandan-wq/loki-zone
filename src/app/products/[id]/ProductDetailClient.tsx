@@ -27,6 +27,8 @@ import {
   X,
   MapPin,
   ThumbsUp,
+  Play,
+  Video,
 } from "lucide-react";
 import { PRODUCTS, Product } from "@/data/products";
 import { useCartStore } from "@/store/useCartStore";
@@ -88,7 +90,9 @@ export default function ProductDetailClient({ productId }: { productId: string }
     return [product.image];
   }, [product]);
 
-  // Gallery, Quantity & Variant states
+  // Gallery, Media & Variant states
+  const productVideo = product.video || product.specs?.video || "";
+  const [activeMediaMode, setActiveMediaMode] = useState<"image" | "video">("image");
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [addedAnimation, setAddedAnimation] = useState(false);
@@ -327,16 +331,19 @@ export default function ProductDetailClient({ productId }: { productId: string }
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14">
             {/* Gallery Column (7 cols) */}
             <div className="lg:col-span-7 flex flex-col-reverse md:flex-row gap-4 items-start">
-              {/* Thumbnail Rail (only if multiple images) */}
-              {galleryImages.length > 1 && (
+              {/* Thumbnail Rail (images + video) */}
+              {(galleryImages.length > 1 || Boolean(productVideo)) && (
                 <div className="flex md:flex-col gap-3 overflow-x-auto md:overflow-visible pb-2 md:pb-0 w-full md:w-20 shrink-0">
                   {galleryImages.map((img, idx) => (
                     <button
                       key={idx}
-                      onClick={() => setActiveImageIndex(idx)}
+                      onClick={() => {
+                        setActiveMediaMode("image");
+                        setActiveImageIndex(idx);
+                      }}
                       aria-label={`View image ${idx + 1}`}
                       className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border-2 transition-all shrink-0 bg-gray-50 ${
-                        activeImageIndex === idx
+                        activeMediaMode === "image" && activeImageIndex === idx
                           ? "border-red-600 ring-2 ring-red-600/20 shadow-md scale-102"
                           : "border-gray-200 hover:border-gray-300 opacity-80 hover:opacity-100"
                       }`}
@@ -350,25 +357,55 @@ export default function ProductDetailClient({ productId }: { productId: string }
                       />
                     </button>
                   ))}
+                  {productVideo && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveMediaMode("video")}
+                      aria-label="Play product video"
+                      className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border-2 transition-all shrink-0 bg-slate-950 flex flex-col items-center justify-center text-white ${
+                        activeMediaMode === "video"
+                          ? "border-red-600 ring-2 ring-red-600/20 shadow-md scale-102"
+                          : "border-gray-300 hover:border-gray-400 opacity-85 hover:opacity-100"
+                      }`}
+                    >
+                      <div className="w-6 h-6 rounded-full bg-red-600 flex items-center justify-center mb-1 shadow-sm">
+                        <Play className="w-3 h-3 text-white fill-white ml-0.5" />
+                      </div>
+                      <span className="text-[9px] font-black uppercase tracking-wider text-red-400">Video</span>
+                    </button>
+                  )}
                 </div>
               )}
 
-              {/* Main Image Stage */}
+              {/* Main Media Stage */}
               <div
-                onClick={() => setIsLightboxOpen(true)}
-                className="relative w-full aspect-square md:aspect-[4/3] lg:aspect-square bg-gradient-to-b from-gray-50 via-white to-gray-50 rounded-3xl border border-gray-200/80 overflow-hidden flex items-center justify-center p-6 sm:p-10 group shadow-sm cursor-zoom-in"
+                onClick={() => activeMediaMode === "image" && setIsLightboxOpen(true)}
+                className={`relative w-full aspect-square md:aspect-[4/3] lg:aspect-square bg-gradient-to-b from-gray-50 via-white to-gray-50 rounded-3xl border border-gray-200/80 overflow-hidden flex items-center justify-center p-6 sm:p-10 group shadow-sm ${
+                  activeMediaMode === "image" ? "cursor-zoom-in" : ""
+                }`}
               >
-                {/* Main Product Image */}
-                <div className="relative w-full h-full">
-                  <Image
-                    src={galleryImages[activeImageIndex] || product.image}
-                    alt={product.name}
-                    fill
-                    priority
-                    sizes="(max-width: 768px) 100vw, 55vw"
-                    className="object-contain transition-transform duration-500 group-hover:scale-105 select-none"
-                  />
-                </div>
+                {activeMediaMode === "video" && productVideo ? (
+                  <div className="w-full h-full flex items-center justify-center bg-black rounded-2xl overflow-hidden">
+                    <video
+                      src={productVideo}
+                      controls
+                      autoPlay
+                      playsInline
+                      className="w-full h-full object-contain max-h-[500px]"
+                    />
+                  </div>
+                ) : (
+                  <div className="relative w-full h-full">
+                    <Image
+                      src={galleryImages[activeImageIndex] || product.image}
+                      alt={product.name}
+                      fill
+                      priority
+                      sizes="(max-width: 768px) 100vw, 55vw"
+                      className="object-contain transition-transform duration-500 group-hover:scale-105 select-none"
+                    />
+                  </div>
+                )}
 
                 {/* Tags Badge Top-Left */}
                 <div className="absolute top-4 left-4 flex flex-col gap-1.5">
@@ -1007,6 +1044,35 @@ export default function ProductDetailClient({ productId }: { productId: string }
                   </div>
                 </dl>
               </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 3.5. Official Product Action Video Showcase Section */}
+      {productVideo && (
+        <section className="py-12 lg:py-16 bg-[#0b0f17] text-white border-t border-b border-slate-800">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-3xl mb-8">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-600/20 text-red-400 text-xs font-bold border border-red-600/30 mb-2">
+                <Video className="w-3.5 h-3.5" />
+                <span>TOURNAMENT ACTION &amp; CRAFTSMANSHIP</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-1">
+                Watch {product.name} In Action
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-400 mt-1">
+                High-definition action clip demonstrating blade speed, spin arc trajectory, and authentic build quality.
+              </p>
+            </div>
+
+            <div className="relative rounded-3xl overflow-hidden border border-slate-800 bg-black aspect-video max-w-4xl mx-auto shadow-2xl">
+              <video
+                src={productVideo}
+                controls
+                playsInline
+                className="w-full h-full object-contain"
+              />
             </div>
           </div>
         </section>

@@ -12,6 +12,7 @@ export interface Product {
   category: "Rackets" | "Apparel" | "Footwear" | "Accessories" | "Balls";
   image: string;
   additionalImages?: string[];
+  video?: string; // Product action / tournament showcase video URL
   description: string;
   inStock: boolean;
   stockCount: number;
@@ -28,6 +29,7 @@ export interface Product {
     spin?: number;
     speed?: number;
     durability?: number;
+    video?: string; // Video URL stored in JSONB
   };
 }
 

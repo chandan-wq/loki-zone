@@ -22,30 +22,57 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg", "image/gif"];
-    if (!allowedTypes.includes(file.type)) {
+    const allowedImageTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/jpg",
+      "image/gif",
+      "image/svg+xml",
+    ];
+
+    const allowedVideoTypes = [
+      "video/mp4",
+      "video/webm",
+      "video/quicktime",
+      "video/ogg",
+      "video/x-m4v",
+    ];
+
+    const isImage = allowedImageTypes.includes(file.type);
+    const isVideo = allowedVideoTypes.includes(file.type);
+
+    if (!isImage && !isVideo) {
       return NextResponse.json(
-        { success: false, error: "Invalid file type. Only JPEG, PNG, WEBP, and GIF are permitted." },
+        {
+          success: false,
+          error:
+            "Invalid file format. Supported formats: JPEG, PNG, WEBP, GIF, SVG for images; MP4, WebM, MOV for videos.",
+        },
         { status: 400 }
       );
     }
 
-    // Limit to 10MB
-    const MAX_SIZE = 10 * 1024 * 1024;
+    // Size limit: 15MB for images, 60MB for videos
+    const MAX_SIZE = isVideo ? 60 * 1024 * 1024 : 15 * 1024 * 1024;
     if (file.size > MAX_SIZE) {
       return NextResponse.json(
-        { success: false, error: "File exceeds 10MB maximum limit." },
+        {
+          success: false,
+          error: `File exceeds maximum allowed size (${isVideo ? "60MB for video" : "15MB for image"}).`,
+        },
         { status: 400 }
       );
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const ext = file.name.split(".").pop() || "jpg";
+    const ext = file.name.split(".").pop() || (isVideo ? "mp4" : "jpg");
     const cleanName = file.name
       .replace(/\.[^/.]+$/, "")
       .replace(/[^a-zA-Z0-9_-]/g, "_")
       .toLowerCase();
-    const filename = `product_${cleanName}_${Date.now()}.${ext}`;
+    const prefix = isVideo ? "video" : "media";
+    const filename = `${prefix}_${cleanName}_${Date.now()}.${ext}`;
 
     const supabase = createAdminClient();
 
@@ -73,6 +100,7 @@ export async function POST(req: NextRequest) {
       url: publicData.publicUrl,
       filename,
       size: file.size,
+      mediaType: isVideo ? "video" : "image",
     });
   } catch (err: any) {
     if (err && typeof err === "object" && "digest" in err) {

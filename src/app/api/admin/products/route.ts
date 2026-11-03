@@ -66,6 +66,7 @@ export async function POST(req: NextRequest) {
       category,
       image,
       additionalImages,
+      video,
       description,
       stockCount,
       tags,
@@ -121,7 +122,10 @@ export async function POST(req: NextRequest) {
       stock_count: numStock,
       in_stock: inStock,
       tags: Array.isArray(tags) ? tags : [],
-      specs: specs && typeof specs === "object" ? specs : {},
+      specs: {
+        ...(specs && typeof specs === "object" ? specs : {}),
+        ...(video ? { video } : {}),
+      },
       is_active: isActive !== undefined ? Boolean(isActive) : true,
       updated_at: new Date().toISOString(),
     };

@@ -62,6 +62,7 @@ import LandingPageCMSStudio from "@/components/admin/LandingPageCMSStudio";
 import ProductImagePicker from "@/components/admin/ProductImagePicker";
 import CourierDispatchSlip from "@/components/admin/CourierDispatchSlip";
 import WholesaleRateMatrix from "@/components/admin/WholesaleRateMatrix";
+import MediaUploadInput from "@/components/admin/MediaUploadInput";
 import {
   useAdminStore,
   HeroSlideCMS,
@@ -263,6 +264,7 @@ export default function AdminDashboardPage() {
               category: p.category,
               image: p.image,
               additionalImages: p.additional_images || [],
+              video: p.video || p.specs?.video || "",
               description: p.description || "",
               inStock: Boolean(p.in_stock),
               stockCount: Number(p.stock_count) || 0,
@@ -318,6 +320,7 @@ export default function AdminDashboardPage() {
     originalPrice: 3200,
     stockCount: 20,
     image: "/images/product-1-light.png",
+    video: "",
     description: "",
     speed: 90,
     spin: 92,
@@ -513,14 +516,15 @@ export default function AdminDashboardPage() {
       inStock: Number(newProd.stockCount) > 0,
       image: newProd.image || "/images/product-1-light.png",
       additionalImages: [newProd.image || "/images/product-1-light.png"],
+      video: newProd.video || undefined,
       description: newProd.description || "High-performance table tennis equipment engineered by LOKI.",
       rating: 5.0,
       reviewsCount: 1,
       tags: ["Official ITTF Authorized", "Fast Nationwide Delivery", "100% Genuine"],
       salesCount: 0,
       weeklyVelocity: 0,
-      specs:
-        newProd.category === "Rackets"
+      specs: {
+        ...(newProd.category === "Rackets"
           ? {
               control: Number(newProd.control),
               spin: Number(newProd.spin),
@@ -540,7 +544,9 @@ export default function AdminDashboardPage() {
           ? {
               handleStyle: ["S", "M", "L", "XL", "XXL"],
             }
-          : {},
+          : {}),
+        video: newProd.video || undefined,
+      },
     };
     addProduct(created);
     setIsAddProductOpen(false);
@@ -566,6 +572,7 @@ export default function AdminDashboardPage() {
       originalPrice: 3200,
       stockCount: 20,
       image: "/images/product-1-light.png",
+      video: "",
       description: "",
       speed: 90,
       spin: 92,
@@ -581,7 +588,14 @@ export default function AdminDashboardPage() {
   const handleSaveProductEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingProduct || !isMaster) return;
-    updateProduct(editingProduct.id, editingProduct);
+    const updatedWithSpecs = {
+      ...editingProduct,
+      specs: {
+        ...(editingProduct.specs || {}),
+        video: editingProduct.video || undefined,
+      },
+    };
+    updateProduct(editingProduct.id, updatedWithSpecs);
     setIsEditProductOpen(false);
     showToast(`✅ Updated "${editingProduct.name}" completely!`);
     try {
@@ -589,7 +603,7 @@ export default function AdminDashboardPage() {
       await fetch("/api/admin/products", {
         method: "POST",
         headers,
-        body: JSON.stringify(editingProduct),
+        body: JSON.stringify(updatedWithSpecs),
       });
     } catch (err) {
       console.error("Failed to update product in database:", err);
@@ -1929,13 +1943,14 @@ export default function AdminDashboardPage() {
                       className="w-full px-3 py-2 bg-[#0b0f17] border border-slate-700 rounded-xl text-white focus:outline-none focus:border-red-500"
                     />
                   </div>
-                  <div>
-                    <label className="block font-bold text-slate-300 mb-1">Background Image URL</label>
-                    <input
-                      type="text"
+                  <div className="sm:col-span-2">
+                    <MediaUploadInput
+                      label="Slide Background Photo (Upload or Paste Link)"
                       value={currentSlide.bgImage}
-                      onChange={(e) => handleSlideChange("bgImage", e.target.value)}
-                      className="w-full px-3 py-2 bg-[#0b0f17] border border-slate-700 rounded-xl text-white focus:outline-none focus:border-red-500"
+                      onChange={(url) => handleSlideChange("bgImage", url)}
+                      getAdminAuthHeaders={getAdminAuthHeaders}
+                      placeholder="Upload high-res banner photo or paste image URL"
+                      helperText="1920x1080 recommended for optimal sharpness across desktop and retina displays."
                     />
                   </div>
                 </div>
@@ -1987,6 +2002,47 @@ export default function AdminDashboardPage() {
                           value={pill.link}
                           onChange={(e) => handlePillChange(pill.id, "link", e.target.value)}
                           className="w-full px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono text-[11px]"
+                        />
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] text-slate-400 block">Pill Icon</label>
+                          <label className="cursor-pointer text-[10px] text-red-400 hover:text-red-300 font-bold flex items-center gap-0.5">
+                            <UploadCloud className="w-3 h-3" />
+                            <span>Upload</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={async (e) => {
+                                const f = e.target.files?.[0];
+                                if (!f) return;
+                                try {
+                                  const headers = await getAdminAuthHeaders();
+                                  const h = { ...headers };
+                                  delete h["Content-Type"];
+                                  delete h["content-type"];
+                                  const fd = new FormData();
+                                  fd.append("file", f);
+                                  const res = await fetch("/api/admin/upload", { method: "POST", headers: h, body: fd });
+                                  const data = await res.json();
+                                  if (data.success && data.url) {
+                                    handlePillChange(pill.id, "image", data.url);
+                                    showToast("✅ Uploaded icon for pill!");
+                                  }
+                                } catch {
+                                  showToast("❌ Failed to upload icon.");
+                                }
+                              }}
+                            />
+                          </label>
+                        </div>
+                        <input
+                          type="text"
+                          value={pill.image}
+                          onChange={(e) => handlePillChange(pill.id, "image", e.target.value)}
+                          placeholder="/images/... or https://..."
+                          className="w-full px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono text-[10px]"
                         />
                       </div>
                     </div>
@@ -3080,6 +3136,15 @@ export default function AdminDashboardPage() {
                 onChange={(url) => setNewProd({ ...newProd, image: url })}
                 getAdminAuthHeaders={getAdminAuthHeaders}
               />
+              <MediaUploadInput
+                label="Product Action / Showcase Video (Optional)"
+                value={newProd.video || ""}
+                onChange={(url) => setNewProd({ ...newProd, video: url })}
+                acceptVideo={true}
+                getAdminAuthHeaders={getAdminAuthHeaders}
+                placeholder="Upload MP4/WebM clip or paste video URL"
+                helperText="Demonstrate blade speed, looping rallies, or product details. Displayed with live video player on the product page."
+              />
               <div>
                 <label className="block font-bold text-slate-300 mb-1">Product Description</label>
                 <textarea
@@ -3266,6 +3331,15 @@ export default function AdminDashboardPage() {
                   setEditingProduct({ ...editingProduct, additionalImages: imgs })
                 }
                 getAdminAuthHeaders={getAdminAuthHeaders}
+              />
+              <MediaUploadInput
+                label="Product Action / Showcase Video (Optional)"
+                value={editingProduct.video || editingProduct.specs?.video || ""}
+                onChange={(url) => setEditingProduct({ ...editingProduct, video: url })}
+                acceptVideo={true}
+                getAdminAuthHeaders={getAdminAuthHeaders}
+                placeholder="Upload MP4/WebM clip or paste video URL"
+                helperText="Demonstrate blade speed, looping rallies, or product details. Displayed with live video player on the product page."
               />
               <div>
                 <label className="block font-bold text-slate-300 mb-1">Description</label>
@@ -3700,15 +3774,14 @@ export default function AdminDashboardPage() {
                   />
                 </div>
               </div>
-              <div>
-                <label className="block font-bold text-slate-300 mb-1">Background Image URL</label>
-                <input
-                  type="text"
-                  value={newSlideForm.bgImage}
-                  onChange={(e) => setNewSlideForm({ ...newSlideForm, bgImage: e.target.value })}
-                  className="w-full px-3 py-2 bg-[#0b0f17] border border-slate-700 rounded-xl text-white"
-                />
-              </div>
+              <MediaUploadInput
+                label="Slide Background Photo (Upload File or Paste Link)"
+                value={newSlideForm.bgImage}
+                onChange={(url) => setNewSlideForm({ ...newSlideForm, bgImage: url })}
+                getAdminAuthHeaders={getAdminAuthHeaders}
+                placeholder="Upload high-res banner photo or paste image URL"
+                helperText="1920x1080 banner recommended."
+              />
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
@@ -3767,15 +3840,14 @@ export default function AdminDashboardPage() {
                   className="w-full px-3 py-2 bg-[#0b0f17] border border-slate-700 rounded-xl text-white font-mono"
                 />
               </div>
-              <div>
-                <label className="block font-bold text-slate-300 mb-1">Icon / Image URL</label>
-                <input
-                  type="text"
-                  value={newPillForm.image}
-                  onChange={(e) => setNewPillForm({ ...newPillForm, image: e.target.value })}
-                  className="w-full px-3 py-2 bg-[#0b0f17] border border-slate-700 rounded-xl text-white"
-                />
-              </div>
+              <MediaUploadInput
+                label="Pill Icon / Thumbnail (Upload File or Paste Link)"
+                value={newPillForm.image}
+                onChange={(url) => setNewPillForm({ ...newPillForm, image: url })}
+                getAdminAuthHeaders={getAdminAuthHeaders}
+                placeholder="Upload icon image or paste image URL"
+                helperText="Square 48x48 icon recommended (e.g. /images/icon-racket.png)."
+              />
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"

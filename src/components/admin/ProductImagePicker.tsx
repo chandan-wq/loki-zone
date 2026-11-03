@@ -379,22 +379,54 @@ export default function ProductImagePicker({
           )}
 
           {/* Add Angle Input */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center flex-wrap sm:flex-nowrap">
             <input
               type="text"
-              placeholder="Add another image angle URL..."
+              placeholder="Paste angle image URL..."
               value={newGalleryUrl}
               onChange={(e) => setNewGalleryUrl(e.target.value)}
-              className="flex-1 px-2.5 py-1.5 bg-[#121824] border border-slate-700 rounded-lg text-white text-[11px] focus:outline-none focus:border-red-500"
+              className="flex-1 min-w-[160px] px-2.5 py-1.5 bg-[#121824] border border-slate-700 rounded-lg text-white text-[11px] focus:outline-none focus:border-red-500"
             />
             <button
               type="button"
               onClick={() => handleAddGalleryImage(newGalleryUrl)}
-              className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold text-[11px] flex items-center gap-1 transition"
+              className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold text-[11px] flex items-center gap-1 transition shrink-0"
             >
               <Plus className="w-3 h-3" />
-              <span>Add Angle</span>
+              <span>Add URL</span>
             </button>
+            <label className="cursor-pointer px-2.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold text-[11px] flex items-center gap-1 transition shadow-sm shrink-0">
+              <UploadCloud className="w-3 h-3" />
+              <span>Upload Angle</span>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={async (e) => {
+                  const f = e.target.files?.[0];
+                  if (!f) return;
+                  try {
+                    const headers = await getAdminAuthHeaders();
+                    const uploadHeaders = { ...headers };
+                    delete uploadHeaders["Content-Type"];
+                    delete uploadHeaders["content-type"];
+                    const formData = new FormData();
+                    formData.append("file", f);
+                    const res = await fetch("/api/admin/upload", {
+                      method: "POST",
+                      headers: uploadHeaders,
+                      body: formData,
+                    });
+                    const data = await res.json();
+                    if (data.success && data.url) {
+                      handleAddGalleryImage(data.url);
+                    }
+                  } catch (err) {
+                    console.error("Gallery angle upload error:", err);
+                  }
+                }}
+              />
+            </label>
           </div>
         </div>
       )}
