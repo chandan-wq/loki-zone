@@ -159,11 +159,14 @@ function CategoryCardItem({
     }
 
     if (fallbackTimerRef.current) clearTimeout(fallbackTimerRef.current);
-    // Safety fallback: only if onEnded fails after full video length + 1000ms grace
+    // Safety fallback: smoothly return card and pause video
     fallbackTimerRef.current = setTimeout(() => {
       setIsSwiped(false);
       isPlayingRef.current = false;
-    }, item.durationMs + 1000);
+      if (videoRef.current) {
+        videoRef.current.pause();
+      }
+    }, item.durationMs + 600);
   }, [item.durationMs]);
 
   // When animation finishes playing to the end, smoothly swipe back
@@ -171,6 +174,9 @@ function CategoryCardItem({
     if (fallbackTimerRef.current) clearTimeout(fallbackTimerRef.current);
     setIsSwiped(false);
     isPlayingRef.current = false;
+    if (videoRef.current) {
+      videoRef.current.pause();
+    }
   }, []);
 
   // Mobile trigger: when user horizontally scrolls to this card or enters Section 2
@@ -188,11 +194,6 @@ function CategoryCardItem({
       isPlayingRef.current = false;
       if (videoRef.current) {
         videoRef.current.pause();
-        try {
-          videoRef.current.currentTime = 0;
-        } catch {
-          // Ignore
-        }
       }
     }
   }, [isMobile, isMobileSpotlight, isSwiped]);
@@ -201,6 +202,9 @@ function CategoryCardItem({
   useEffect(() => {
     return () => {
       if (fallbackTimerRef.current) clearTimeout(fallbackTimerRef.current);
+      if (videoRef.current) {
+        videoRef.current.pause();
+      }
     };
   }, []);
 
@@ -227,17 +231,17 @@ function CategoryCardItem({
         }
       }}
       onMouseEnter={handleMouseEnter}
-      className={`group flex-shrink-0 snap-center sm:snap-start w-[76vw] max-w-[280px] sm:w-[300px] md:w-[320px] lg:w-[330px] rounded-2xl sm:rounded-3xl bg-[#0c121e] border p-2 sm:p-2.5 transition-all duration-500 flex flex-col justify-between block select-none origin-bottom ${
-        /* Mobile: 1 elevated, others blurred */
+      className={`group flex-shrink-0 snap-center sm:snap-start w-[78vw] max-w-[285px] sm:w-[305px] md:w-[320px] lg:w-[330px] rounded-2xl sm:rounded-3xl bg-[#0c121e] border p-2 sm:p-2.5 transition-all duration-300 flex flex-col justify-between block select-none origin-bottom transform-gpu ${
+        /* Mobile: 1 elevated, side cards cleanly dimmed without expensive GPU blurs */
         isMobileSpotlight
-          ? "translate-y-0 scale-100 opacity-100 blur-none z-10 border-slate-700/90 shadow-2xl shadow-black/80 ring-1 ring-red-500/40"
-          : "translate-y-3 scale-[0.94] opacity-50 blur-[1.5px] z-0 border-slate-800/60 shadow-md"
+          ? "translate-y-0 scale-100 opacity-100 z-10 border-slate-700/90 shadow-2xl shadow-black/80 ring-1 ring-red-500/40"
+          : "translate-y-1.5 scale-[0.96] opacity-65 z-0 border-slate-800/60 shadow-md"
       } ${
-        /* Desktop (md+): 3 elevated, others blurred; or swiped card stays elevated while playing animation */
+        /* Desktop (md+): 3 elevated, others dimmed */
         isDesktopSpotlight || isSwiped
-          ? "md:translate-y-0 md:scale-100 md:opacity-100 md:blur-none md:z-10 md:border-slate-700/90 md:shadow-2xl md:ring-1 md:ring-red-500/30"
-          : "md:translate-y-6 md:scale-[0.93] md:opacity-40 md:blur-[2.5px] md:z-0 md:border-slate-800/60 md:shadow-md"
-      } hover:blur-none hover:opacity-100 hover:translate-y-0 hover:scale-100 hover:border-red-500/60`}
+          ? "md:translate-y-0 md:scale-100 md:opacity-100 md:z-10 md:border-slate-700/90 md:shadow-2xl md:ring-1 md:ring-red-500/30"
+          : "md:translate-y-4 md:scale-[0.95] md:opacity-50 md:z-0 md:border-slate-800/60 md:shadow-md"
+      } hover:opacity-100 hover:translate-y-0 hover:scale-100 hover:border-red-500/60`}
     >
       {/* 3:4 High-Resolution Artwork Container with Dual-Image/Video Swipe */}
       <div className="relative w-full aspect-[3/4] rounded-xl sm:rounded-2xl overflow-hidden bg-[#070b12]">
@@ -270,9 +274,9 @@ function CategoryCardItem({
               src={item.video}
               muted
               playsInline
-              preload="auto"
+              preload="none"
               onEnded={handleVideoEnded}
-              className="w-full h-full object-cover object-center pointer-events-none select-none transition-transform duration-500"
+              className="w-full h-full object-cover object-center pointer-events-none select-none"
             />
           </div>
 
@@ -359,17 +363,17 @@ export default function HorizontalScrollShowcase() {
   const [canScrollRight, setCanScrollRight] = useState(true);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [currentIndex, setCurrentIndex] = useState(1);
-  const isAnimatingRef = useRef(false);
+  const currentIndexRef = useRef(1);
 
-  // Mobile Swipe Animation Controller (which card is currently animating swipe on mobile)
+  // Mobile Settle & Video Animation Controller
   const [mobileSwipedIndex, setMobileSwipedIndex] = useState<number | null>(null);
-  const prevIndexRef = useRef(1);
-  const hasTriggeredInitialMobileRef = useRef(false);
+  const scrollSettleTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isScrollingRafRef = useRef<number | null>(null);
 
   const totalCardsCount = CATEGORY_ITEMS.length;
 
-  // 1. Mobile Auto-Animation for 1st card when user scrolls from Section 1 into Section 2
-  // Uses genuine IntersectionObserver on the section container without premature timeout fallbacks
+  // 1. Mobile Auto-Animation for 1st card on calm entrance
+  const hasTriggeredInitialMobileRef = useRef(false);
   useEffect(() => {
     const sectionEl = sectionRef.current;
     if (!sectionEl || typeof window === "undefined") return;
@@ -377,34 +381,25 @@ export default function HorizontalScrollShowcase() {
     const observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
-        if (entry.isIntersecting && entry.intersectionRatio >= 0.12) {
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.15) {
           setIsVisible(true);
-          if (!hasTriggeredInitialMobileRef.current) {
+          if (!hasTriggeredInitialMobileRef.current && isMobile) {
             hasTriggeredInitialMobileRef.current = true;
-            // Delay slightly for smooth entrance then trigger 1st card animation
+            // Delay 600ms so user has comfortably stopped vertical scroll
             setTimeout(() => {
               setMobileSwipedIndex(0);
-            }, 300);
+            }, 600);
           }
         }
       },
       {
-        threshold: [0.12, 0.25],
+        threshold: [0.15],
       }
     );
 
     observer.observe(sectionEl);
     return () => observer.disconnect();
-  }, []);
-
-  // 2. Mobile swipe animation trigger whenever user horizontally scrolls to a new card
-  useEffect(() => {
-    if (prevIndexRef.current !== currentIndex) {
-      prevIndexRef.current = currentIndex;
-      const activeCardIdx = currentIndex - 1;
-      setMobileSwipedIndex(activeCardIdx);
-    }
-  }, [currentIndex]);
+  }, [isMobile]);
 
   // Sync scroll indicators & detect current card index
   const updateScrollState = useCallback(() => {
@@ -423,7 +418,6 @@ export default function HorizontalScrollShowcase() {
 
     let newIndex = 1;
     if (cards.length > 0) {
-      // If user has scrolled near the end, focus the 7th card
       if (maxScroll > 0 && scrollLeft >= maxScroll - 35) {
         newIndex = totalCardsCount;
       } else {
@@ -441,21 +435,47 @@ export default function HorizontalScrollShowcase() {
       }
     }
 
+    currentIndexRef.current = newIndex;
     setCurrentIndex(newIndex);
     setCanScrollLeft(scrollLeft > 15 && newIndex > 1);
     setCanScrollRight(scrollLeft < maxScroll - 20 && newIndex < totalCardsCount);
   }, [totalCardsCount]);
 
+  // High-performance RAF scroll handler with settle debounce for mobile
+  const handleScroll = useCallback(() => {
+    if (!isScrollingRafRef.current) {
+      isScrollingRafRef.current = requestAnimationFrame(() => {
+        updateScrollState();
+        isScrollingRafRef.current = null;
+      });
+    }
+
+    // Clear previous settle timer: NO video animation plays while actively scrolling!
+    if (scrollSettleTimerRef.current) {
+      clearTimeout(scrollSettleTimerRef.current);
+    }
+
+    // Trigger video animation ONLY when user has settled on a card for 450ms
+    if (isMobile) {
+      scrollSettleTimerRef.current = setTimeout(() => {
+        setMobileSwipedIndex(currentIndexRef.current - 1);
+      }, 450);
+    }
+  }, [isMobile, updateScrollState]);
+
   useEffect(() => {
     updateScrollState();
     window.addEventListener("resize", updateScrollState);
-    return () => window.removeEventListener("resize", updateScrollState);
+    return () => {
+      window.removeEventListener("resize", updateScrollState);
+      if (scrollSettleTimerRef.current) clearTimeout(scrollSettleTimerRef.current);
+      if (isScrollingRafRef.current) cancelAnimationFrame(isScrollingRafRef.current);
+    };
   }, [updateScrollState]);
 
-  // Smooth arrow scrolling that navigates card-by-card all the way to Card 7
+  // Smooth arrow scrolling that navigates card-by-card
   const scroll = (direction: "left" | "right") => {
-    if (!scrollRef.current || isAnimatingRef.current) return;
-    isAnimatingRef.current = true;
+    if (!scrollRef.current) return;
 
     const container = scrollRef.current;
     const cards = Array.from(container.children).filter(
@@ -473,7 +493,6 @@ export default function HorizontalScrollShowcase() {
           behavior: "smooth",
         });
       } else {
-        // Center the target card smoothly in the viewport
         const targetScrollLeft =
           targetCard.offsetLeft - (container.clientWidth - targetCard.offsetWidth) / 2;
 
@@ -483,16 +502,11 @@ export default function HorizontalScrollShowcase() {
         });
       }
     }
-
-    setTimeout(() => {
-      isAnimatingRef.current = false;
-      updateScrollState();
-    }, 400);
   };
 
-  // Mouse Drag physics
+  // Mouse Drag physics for PC/Desktop only (Disabled on mobile to ensure 100% native smooth momentum touch)
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!scrollRef.current) return;
+    if (!scrollRef.current || isMobile) return;
     setIsDragging(true);
     setStartX(e.pageX - scrollRef.current.offsetLeft);
     setStartScrollLeft(scrollRef.current.scrollLeft);
@@ -500,7 +514,7 @@ export default function HorizontalScrollShowcase() {
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging || !scrollRef.current) return;
+    if (!isDragging || !scrollRef.current || isMobile) return;
     e.preventDefault();
     const x = e.pageX - scrollRef.current.offsetLeft;
     const walk = (x - startX) * 1.25;
@@ -512,75 +526,16 @@ export default function HorizontalScrollShowcase() {
   };
 
   const handleMouseUp = () => {
+    if (isMobile) return;
     setIsDragging(false);
     setTimeout(() => setHasDragged(false), 90);
   };
 
   const handleMouseLeave = () => {
-    if (isDragging) {
+    if (isDragging && !isMobile) {
       setIsDragging(false);
       setTimeout(() => setHasDragged(false), 90);
     }
-  };
-
-  // Touch Swipe Physics for Mobile Finger Gestures
-  const touchStartXRef = useRef(0);
-  const touchStartYRef = useRef(0);
-  const touchStartScrollLeftRef = useRef(0);
-  const isTouchScrollingRef = useRef(false);
-  const touchStartTimeRef = useRef(0);
-
-  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (!scrollRef.current || e.touches.length === 0) return;
-    const touch = e.touches[0];
-    touchStartXRef.current = touch.clientX;
-    touchStartYRef.current = touch.clientY;
-    touchStartScrollLeftRef.current = scrollRef.current.scrollLeft;
-    touchStartTimeRef.current = Date.now();
-    isTouchScrollingRef.current = false;
-    setHasDragged(false);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (!scrollRef.current || e.touches.length === 0) return;
-    const touch = e.touches[0];
-    const deltaX = touch.clientX - touchStartXRef.current;
-    const deltaY = touch.clientY - touchStartYRef.current;
-
-    // Detect if the user is swiping horizontally with their finger
-    if (!isTouchScrollingRef.current) {
-      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 6) {
-        isTouchScrollingRef.current = true;
-      }
-    }
-
-    if (isTouchScrollingRef.current) {
-      setHasDragged(true);
-      scrollRef.current.scrollLeft = touchStartScrollLeftRef.current - deltaX;
-      updateScrollState();
-    }
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (!scrollRef.current) return;
-    const touchDuration = Date.now() - touchStartTimeRef.current;
-    const touchDistance = touchStartXRef.current - (e.changedTouches[0]?.clientX || touchStartXRef.current);
-
-    // Fast flick gesture detection (< 300ms and > 30px)
-    if (touchDuration < 300 && Math.abs(touchDistance) > 30) {
-      if (touchDistance > 0 && canScrollRight) {
-        scroll("right");
-      } else if (touchDistance < 0 && canScrollLeft) {
-        scroll("left");
-      }
-    } else {
-      updateScrollState();
-    }
-
-    isTouchScrollingRef.current = false;
-    setTimeout(() => {
-      setHasDragged(false);
-    }, 150);
   };
 
   return (
@@ -663,22 +618,18 @@ export default function HorizontalScrollShowcase() {
         {/* ============================================================ */}
         <div
           ref={scrollRef}
-          onScroll={updateScrollState}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseLeave}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          className={`flex gap-4 sm:gap-6 overflow-x-auto pb-10 pt-4 scrollbar-none select-none -mx-4 px-4 sm:mx-0 sm:px-0 items-end snap-x snap-mandatory ${
+          onScroll={handleScroll}
+          onMouseDown={!isMobile ? handleMouseDown : undefined}
+          onMouseMove={!isMobile ? handleMouseMove : undefined}
+          onMouseUp={!isMobile ? handleMouseUp : undefined}
+          onMouseLeave={!isMobile ? handleMouseLeave : undefined}
+          className={`flex gap-4 sm:gap-6 overflow-x-auto pb-8 pt-3 scrollbar-none select-none -mx-4 px-4 sm:mx-0 sm:px-0 items-end snap-x snap-mandatory overscroll-x-contain touch-pan-x ${
             isDragging ? "cursor-grabbing" : "cursor-grab"
           }`}
           style={{
             scrollbarWidth: "none",
             msOverflowStyle: "none",
             WebkitOverflowScrolling: "touch",
-            touchAction: "pan-x pan-y",
           }}
         >
           {CATEGORY_ITEMS.map((item, index) => {
