@@ -39,6 +39,7 @@ import {
   Percent,
   RefreshCw,
   Eye,
+  EyeOff,
   DollarSign,
   AlertTriangle,
   Sliders,
@@ -145,6 +146,8 @@ export default function AdminDashboardPage() {
     addStaffMember,
     removeStaffMember,
     toggleStaffStatus,
+    setStaffMembers,
+    syncStaffFromDB,
     reviews,
     addReview,
     updateReview,
@@ -198,10 +201,25 @@ export default function AdminDashboardPage() {
     const syncDatabaseState = async () => {
       try {
         const headers = await getAdminAuthHeaders();
-        const [ordersRes, prodsRes] = await Promise.all([
+        const [ordersRes, prodsRes, staffRes, meRes] = await Promise.all([
           fetch("/api/admin/orders", { headers }),
           fetch("/api/admin/products", { headers }),
+          fetch("/api/admin/staff", { headers }),
+          fetch("/api/admin/me", { headers }),
         ]);
+
+        if (meRes.ok) {
+          const meData = await meRes.json();
+          if (meData.authorized && meData.role) {
+            setAdminRole(meData.role);
+          }
+        }
+        if (staffRes.ok) {
+          const staffData = await staffRes.json();
+          if (staffData.success && Array.isArray(staffData.staff)) {
+            setStaffMembers(staffData.staff);
+          }
+        }
         if (ordersRes.ok) {
           const ordersData = await ordersRes.json();
           if (ordersData.success && Array.isArray(ordersData.orders)) {
@@ -372,8 +390,12 @@ export default function AdminDashboardPage() {
   const [newStaff, setNewStaff] = useState({
     name: "",
     email: "",
+    password: "",
     role: "normal" as "main" | "normal",
   });
+  const [showStaffPassword, setShowStaffPassword] = useState(false);
+  const [staffSubmitting, setStaffSubmitting] = useState(false);
+  const [staffFormError, setStaffFormError] = useState("");
 
   // 8. STORE SETTINGS STATE
   const [settingsForm, setSettingsForm] = useState<StoreSettingsCMS>({
@@ -759,21 +781,85 @@ export default function AdminDashboardPage() {
   };
 
   // STAFF HANDLERS
-  const handleCreateStaff = (e: React.FormEvent) => {
+  const handleCreateStaff = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isMaster) return;
-    const staffId = "STAFF-" + (staffMembers.length + 1).toString().padStart(3, "0");
-    addStaffMember({
-      id: staffId,
-      name: newStaff.name,
-      email: newStaff.email.toLowerCase().trim(),
-      role: newStaff.role,
-      status: "active",
-      lastLogin: "Just Created",
-    });
-    setIsAddStaffOpen(false);
-    showToast(`✅ Added ${newStaff.name} as ${newStaff.role === "main" ? "Main Admin" : "Normal Admin"}.`);
-    setNewStaff({ name: "", email: "", role: "normal" });
+    setStaffFormError("");
+
+    if (!newStaff.name.trim() || newStaff.name.trim().length < 2) {
+      setStaffFormError("Full staff name is required (minimum 2 characters).");
+      return;
+    }
+    if (!newStaff.email.trim() || !newStaff.email.includes("@")) {
+      setStaffFormError("Valid staff email address is required.");
+      return;
+    }
+    if (!newStaff.password || newStaff.password.length < 8) {
+      setStaffFormError("Password must be at least 8 characters long.");
+      return;
+    }
+
+    setStaffSubmitting(true);
+    try {
+      const headers = await getAdminAuthHeaders();
+      const res = await fetch("/api/admin/staff", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          name: newStaff.name.trim(),
+          email: newStaff.email.trim().toLowerCase(),
+          password: newStaff.password.trim(),
+          role: newStaff.role,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to create staff account.");
+      }
+
+      addStaffMember(data.staff);
+      setIsAddStaffOpen(false);
+      showToast(`✅ Created staff account for "${newStaff.name}". They can log in immediately!`);
+      setNewStaff({ name: "", email: "", password: "", role: "normal" });
+    } catch (err: any) {
+      setStaffFormError(err.message || "Failed to create staff account.");
+    } finally {
+      setStaffSubmitting(false);
+    }
+  };
+
+  const handleToggleStaffStatus = async (id: string, currentStatus: string) => {
+    const newStatus = currentStatus === "active" ? "inactive" : "active";
+    toggleStaffStatus(id);
+    showToast(`Staff account ${newStatus === "active" ? "activated" : "deactivated"}.`);
+    try {
+      const headers = await getAdminAuthHeaders();
+      await fetch("/api/admin/staff", {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ id, status: newStatus }),
+      });
+    } catch (err) {
+      console.error("Failed to update staff status:", err);
+    }
+  };
+
+  const handleRemoveStaff = async (id: string, name: string) => {
+    if (!isMaster) return;
+    if (confirm(`Are you sure you want to completely remove staff member "${name}"?`)) {
+      removeStaffMember(id);
+      showToast(`🗑️ Removed staff member "${name}".`);
+      try {
+        const headers = await getAdminAuthHeaders();
+        await fetch(`/api/admin/staff?id=${encodeURIComponent(id)}`, {
+          method: "DELETE",
+          headers,
+        });
+      } catch (err) {
+        console.error("Failed to delete staff member from database:", err);
+      }
+    }
   };
 
   // SETTINGS HANDLER
@@ -2315,20 +2401,18 @@ export default function AdminDashboardPage() {
                 </button>
               </div>
 
-              {/* ⚠️ Important limitation notice */}
-              <div className="bg-amber-900/20 border border-amber-500/30 rounded-2xl p-4 text-xs text-amber-300 flex items-start gap-3">
-                <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+              {/* Full-Stack Live Synchronization Notice */}
+              <div className="bg-emerald-950/30 border border-emerald-500/30 rounded-2xl p-4 text-xs text-emerald-300 flex items-start gap-3">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <p className="font-bold text-amber-200">Staff Access Limitation — Read Before Adding Staff</p>
-                  <p className="text-amber-300/90">
-                    Staff added here are stored in <strong>this browser only</strong> (localStorage). They will appear in this roster but
-                    <strong> cannot log in to the admin panel</strong> until their email is also added to the
-                    <code className="mx-1 px-1 bg-amber-900/50 rounded text-amber-100">STAFF_EMAILS</code>
-                    environment variable on the server, or their Clerk account has
-                    <code className="mx-1 px-1 bg-amber-900/50 rounded text-amber-100">publicMetadata.role = &quot;staff&quot;</code>
-                    set via the Clerk Dashboard.
+                  <p className="font-bold text-emerald-200">Full-Stack Live Authentication Active</p>
+                  <p className="text-emerald-300/90 leading-relaxed">
+                    Staff accounts added below are provisioned directly in the live authentication system and database.
+                    Staff members can immediately log in at <code className="mx-1 px-1.5 py-0.5 bg-black/40 rounded text-white font-mono">/admin/login</code> or <code className="mx-1 px-1.5 py-0.5 bg-black/40 rounded text-white font-mono">/login</code> with the email and password you assign to them.
                   </p>
-                  <p className="text-amber-400 font-semibold">Pre-authorized server-side staff: staff@lokizone.com.np</p>
+                  <p className="text-emerald-400 font-semibold text-[11px]">
+                    Staff members are granted access to the Live Stock Desk, Orders Dispatch, and Wholesale Quote Desk. All CMS, Coupons, and Store Settings remain strictly restricted to Main Admins.
+                  </p>
                 </div>
               </div>
 
@@ -2365,13 +2449,14 @@ export default function AdminDashboardPage() {
                         </td>
                         <td className="py-3 px-4">
                           <button
-                            onClick={() => toggleStaffStatus(st.id)}
+                            onClick={() => handleToggleStaffStatus(st.id, st.status)}
                             disabled={st.role === "main"}
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition ${
                               st.status === "active"
-                                ? "bg-emerald-500/20 text-emerald-400"
-                                : "bg-slate-800 text-slate-400"
+                                ? "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
+                                : "bg-red-500/20 text-red-400 hover:bg-red-500/30"
                             }`}
+                            title={st.status === "active" ? "Click to deactivate" : "Click to activate"}
                           >
                             {st.status.toUpperCase()}
                           </button>
@@ -2380,8 +2465,8 @@ export default function AdminDashboardPage() {
                         <td className="py-3 px-4 text-right">
                           {st.role !== "main" && (
                             <button
-                              onClick={() => removeStaffMember(st.id)}
-                              className="text-slate-500 hover:text-red-400 font-semibold text-xs transition"
+                              onClick={() => handleRemoveStaff(st.id, st.name)}
+                              className="text-slate-500 hover:text-red-400 font-semibold text-xs transition p-1 hover:bg-red-500/10 rounded"
                             >
                               Remove
                             </button>
@@ -4028,6 +4113,13 @@ export default function AdminDashboardPage() {
               </button>
             </div>
             <form onSubmit={handleCreateStaff} className="space-y-4">
+              {staffFormError && (
+                <div className="p-3 bg-red-950/60 border border-red-800 rounded-xl text-red-300 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+                  <span>{staffFormError}</span>
+                </div>
+              )}
+
               <div>
                 <label className="block font-bold text-slate-300 mb-1">Full Name</label>
                 <input
@@ -4036,9 +4128,10 @@ export default function AdminDashboardPage() {
                   placeholder="e.g. Ramesh Thapa"
                   value={newStaff.name}
                   onChange={(e) => setNewStaff({ ...newStaff, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-[#0b0f17] border border-slate-700 rounded-xl text-white"
+                  className="w-full px-3 py-2 bg-[#0b0f17] border border-slate-700 rounded-xl text-white focus:outline-none focus:border-red-500"
                 />
               </div>
+
               <div>
                 <label className="block font-bold text-slate-300 mb-1">Staff Email</label>
                 <input
@@ -4047,33 +4140,66 @@ export default function AdminDashboardPage() {
                   placeholder="staff@lokizone.com.np"
                   value={newStaff.email}
                   onChange={(e) => setNewStaff({ ...newStaff, email: e.target.value })}
-                  className="w-full px-3 py-2 bg-[#0b0f17] border border-slate-700 rounded-xl text-white"
+                  className="w-full px-3 py-2 bg-[#0b0f17] border border-slate-700 rounded-xl text-white focus:outline-none focus:border-red-500"
                 />
               </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-bold text-slate-300">Login Password</label>
+                  <span className="text-[10px] text-amber-400 font-mono">Min 8 characters</span>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showStaffPassword ? "text" : "password"}
+                    required
+                    minLength={8}
+                    placeholder="Enter login password for this staff..."
+                    value={newStaff.password}
+                    onChange={(e) => setNewStaff({ ...newStaff, password: e.target.value })}
+                    className="w-full px-3 py-2 pr-10 bg-[#0b0f17] border border-slate-700 rounded-xl text-white font-mono focus:outline-none focus:border-red-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowStaffPassword(!showStaffPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                  >
+                    {showStaffPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  🔑 Admin sets this password. The staff member will use this exact password and email to log in at /login or /admin/login.
+                </p>
+              </div>
+
               <div>
                 <label className="block font-bold text-slate-300 mb-1">Role Permission</label>
                 <select
                   value={newStaff.role}
                   onChange={(e) => setNewStaff({ ...newStaff, role: e.target.value as "main" | "normal" })}
-                  className="w-full px-3 py-2 bg-[#0b0f17] border border-slate-700 rounded-xl text-white"
+                  className="w-full px-3 py-2 bg-[#0b0f17] border border-slate-700 rounded-xl text-white focus:outline-none focus:border-red-500"
                 >
                   <option value="normal">Normal Admin (Store Staff - Stock &amp; Orders)</option>
                   <option value="main">Main Admin (Full Unrestricted Access)</option>
                 </select>
               </div>
+
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setIsAddStaffOpen(false)}
-                  className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl font-bold"
+                  disabled={staffSubmitting}
+                  className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl font-bold hover:bg-slate-700 transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold transition shadow-md shadow-red-600/30"
+                  disabled={staffSubmitting}
+                  className="inline-flex items-center gap-2 px-5 py-2 bg-red-600 hover:bg-red-500 disabled:bg-red-800 text-white rounded-xl font-bold transition shadow-md shadow-red-600/30"
                 >
-                  Add Staff
+                  {staffSubmitting && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                  <span>{staffSubmitting ? "Provisioning..." : "Add Staff Account"}</span>
                 </button>
               </div>
             </form>

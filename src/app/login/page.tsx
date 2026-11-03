@@ -204,6 +204,19 @@ function LoginForm() {
         await setActive({ session: result.createdSessionId });
 
         const redirectUrl = searchParams.get("redirect_url");
+
+        try {
+          const meRes = await fetch("/api/admin/me");
+          const meData = await meRes.json();
+          if (meData.authorized && meData.role) {
+            loginAdmin(meData.email || cleanEmail, meData.role);
+            window.location.href = redirectUrl && redirectUrl.includes("/admin") ? redirectUrl : "/admin";
+            return;
+          }
+        } catch {
+          // Fallback to client-side check
+        }
+
         const resolvedRole = resolveAdminRole(cleanEmail);
         if (resolvedRole) {
           loginAdmin(cleanEmail, resolvedRole);
@@ -297,6 +310,19 @@ function LoginForm() {
 
         const cleanEmail = email.trim().toLowerCase();
         const redirectUrl = searchParams.get("redirect_url");
+
+        try {
+          const meRes = await fetch("/api/admin/me");
+          const meData = await meRes.json();
+          if (meData.authorized && meData.role) {
+            loginAdmin(meData.email || cleanEmail, meData.role);
+            window.location.href = redirectUrl && redirectUrl.includes("/admin") ? redirectUrl : "/admin";
+            return;
+          }
+        } catch {
+          // Fallback
+        }
+
         const resolvedRole = resolveAdminRole(cleanEmail);
         if (resolvedRole) {
           loginAdmin(cleanEmail, resolvedRole);

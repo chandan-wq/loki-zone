@@ -1,7 +1,43 @@
 import { NextRequest } from "next/server";
 import { currentUser, auth } from "@clerk/nextjs/server";
 import { createClerkClient, verifyToken } from "@clerk/backend";
-import { extractClerkEmail, resolveAdminRole, AdminRole } from "./adminAuth";
+import { extractClerkEmail, resolveAdminRole, AdminRole, MAIN_ADMIN_EMAILS } from "./adminAuth";
+import { createAdminClient } from "./supabase/server";
+
+async function verifyEmailRoleWithDatabase(
+  email: string | null,
+  publicMetadataRole?: unknown
+): Promise<AdminRole | null> {
+  if (!email) return null;
+  const cleanEmail = email.toLowerCase().trim();
+
+  // 1. Permanent Main Admin check
+  if (MAIN_ADMIN_EMAILS.includes(cleanEmail)) {
+    return "main";
+  }
+
+  // 2. Real-time Supabase staff_members roster check
+  try {
+    const supabase = createAdminClient();
+    const { data: staffMember } = await supabase
+      .from("staff_members")
+      .select("role, status")
+      .eq("email", cleanEmail)
+      .maybeSingle();
+
+    if (staffMember) {
+      if (staffMember.status === "inactive") {
+        return null; // Explicitly deactivated by Store Owner
+      }
+      return (staffMember.role as AdminRole) || "normal";
+    }
+  } catch (err) {
+    console.warn("[adminAuthServer] Database staff lookup warning:", err);
+  }
+
+  // 3. Fallback to Clerk-managed publicMetadata
+  return resolveAdminRole(cleanEmail, publicMetadataRole);
+}
 
 /**
  * Server-Side Unified Admin Session Verification.
@@ -21,7 +57,7 @@ export async function getVerifiedAdmin(req?: NextRequest): Promise<{
     const user = await currentUser();
     if (user) {
       const email = extractClerkEmail(user);
-      const role = resolveAdminRole(email, user.publicMetadata?.role);
+      const role = await verifyEmailRoleWithDatabase(email, user.publicMetadata?.role);
       if (role) {
         return { authorized: true, email, role, userId: user.id };
       }
@@ -41,7 +77,7 @@ export async function getVerifiedAdmin(req?: NextRequest): Promise<{
       const user = await clerk.users.getUser(userId);
       if (user) {
         const email = extractClerkEmail(user);
-        const role = resolveAdminRole(email, user.publicMetadata?.role);
+        const role = await verifyEmailRoleWithDatabase(email, user.publicMetadata?.role);
         if (role) {
           return { authorized: true, email, role, userId: user.id };
         }
@@ -67,7 +103,7 @@ export async function getVerifiedAdmin(req?: NextRequest): Promise<{
             const user = await clerk.users.getUser(sub);
             if (user) {
               const email = extractClerkEmail(user);
-              const role = resolveAdminRole(email, user.publicMetadata?.role);
+              const role = await verifyEmailRoleWithDatabase(email, user.publicMetadata?.role);
               if (role) {
                 return { authorized: true, email, role, userId: user.id };
               }

@@ -230,6 +230,8 @@ interface AdminState {
   addStaffMember: (staff: StaffMember) => void;
   removeStaffMember: (id: string) => void;
   toggleStaffStatus: (id: string) => void;
+  setStaffMembers: (staff: StaffMember[]) => void;
+  syncStaffFromDB: (token?: string | null) => Promise<void>;
 
   // Products CRUD
   products: Product[];
@@ -413,6 +415,23 @@ export const useAdminStore = create<AdminState>()(
           : s
       ),
     })),
+
+  setStaffMembers: (staff) => set({ staffMembers: staff }),
+
+  syncStaffFromDB: async (token) => {
+    try {
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      const res = await fetch("/api/admin/staff", { headers });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.success && Array.isArray(data.staff)) {
+        set({ staffMembers: data.staff });
+      }
+    } catch {
+      // Keep existing state
+    }
+  },
 
   // Products CRUD initialized from official PRODUCTS
   products: [...PRODUCTS],
