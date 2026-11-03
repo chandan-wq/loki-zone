@@ -52,12 +52,36 @@ export default function CartPage() {
       : storeSettings.deliveryInsideValley || 100;
   const grandTotal = Math.max(0, subtotal - discountAmount + shippingFee);
 
-  const handleApplyPromo = (e: React.FormEvent) => {
+  const handleApplyPromo = async (e: React.FormEvent) => {
     e.preventDefault();
     setPromoError("");
     if (!promoCode.trim()) return;
 
     const codeToSearch = promoCode.trim().toUpperCase();
+
+    // 1. Validate against live Supabase coupon engine
+    try {
+      const res = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: codeToSearch, subtotal }),
+      });
+      const data = await res.json();
+      if (res.ok && data.valid) {
+        applyCoupon({
+          code: data.code,
+          discountType: data.discountType,
+          discountValue: data.discountValue,
+        });
+        setPromoCode("");
+        return;
+      } else if (!res.ok && data.error && !data.error.toLowerCase().includes("invalid")) {
+        setPromoError(data.error);
+        return;
+      }
+    } catch {}
+
+    // 2. Client-side fallback
     const found = coupons.find((c) => c.code.toUpperCase() === codeToSearch);
 
     if (!found) {

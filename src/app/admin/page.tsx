@@ -77,7 +77,7 @@ import {
   CTABannerCMS,
 } from "@/store/useAdminStore";
 import { Product } from "@/data/products";
-import { resolveAdminRole, extractClerkEmail } from "@/lib/adminAuth";
+import { resolveAdminRole, extractClerkEmail, MAIN_ADMIN_EMAILS } from "@/lib/adminAuth";
 
 // Hero CMS Color Themes (Normal, Professional Sports Palettes)
 const GRADIENT_PRESETS = [
@@ -135,6 +135,7 @@ export default function AdminDashboardPage() {
     updateRateSheetItem,
     deleteRateSheetItem,
     coupons,
+    setCoupons,
     addCoupon,
     updateCoupon,
     deleteCoupon,
@@ -162,6 +163,8 @@ export default function AdminDashboardPage() {
 
   const isMaster = adminRole === "main";
   const isNormal = adminRole === "normal";
+  const loggedInEmail = extractClerkEmail(user)?.toLowerCase().trim() || "";
+  const isActualMaster = Boolean(loggedInEmail && MAIN_ADMIN_EMAILS.includes(loggedInEmail));
 
   // Helper to obtain server-verified admin authorization headers
   const getAdminAuthHeaders = async (): Promise<Record<string, string>> => {
@@ -178,7 +181,6 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     if (!isUserLoaded) return;
-    setIsClientReady(true);
 
     if (!user) {
       logoutAdmin();
@@ -187,31 +189,49 @@ export default function AdminDashboardPage() {
     }
 
     const primaryEmail = extractClerkEmail(user) || "";
-    const role = resolveAdminRole(primaryEmail, user.publicMetadata?.role);
+    const initialRole = resolveAdminRole(primaryEmail, user.publicMetadata?.role);
 
-    if (role) {
-      loginAdmin(primaryEmail, role);
-    } else {
-      logoutAdmin();
-      router.replace("/account?error=unauthorized_admin");
-      return;
-    }
+    // Two-stage server & database verification before locking access
+    const verifyAndSync = async () => {
+      let verifiedRole = initialRole;
 
-    // Synchronize live database orders and catalog
-    const syncDatabaseState = async () => {
       try {
         const headers = await getAdminAuthHeaders();
-        const [ordersRes, prodsRes, staffRes, meRes] = await Promise.all([
-          fetch("/api/admin/orders", { headers }),
-          fetch("/api/admin/products", { headers }),
-          fetch("/api/admin/staff", { headers }),
-          fetch("/api/admin/me", { headers }),
-        ]);
-
+        const meRes = await fetch("/api/admin/me", { headers });
         if (meRes.ok) {
           const meData = await meRes.json();
           if (meData.authorized && meData.role) {
-            setAdminRole(meData.role);
+            verifiedRole = meData.role;
+          }
+        }
+      } catch (err) {
+        console.warn("[Admin Verification Notice]:", err);
+      }
+
+      if (!verifiedRole) {
+        logoutAdmin();
+        router.replace("/account?error=unauthorized_admin");
+        return;
+      }
+
+      loginAdmin(primaryEmail, verifiedRole);
+      setAdminRole(verifiedRole);
+      setIsClientReady(true);
+
+      // Synchronize live database orders, coupons, staff roster, and catalog
+      try {
+        const headers = await getAdminAuthHeaders();
+        const [ordersRes, prodsRes, staffRes, couponsRes] = await Promise.all([
+          fetch("/api/admin/orders", { headers }),
+          fetch("/api/admin/products", { headers }),
+          fetch("/api/admin/staff", { headers }),
+          fetch("/api/admin/coupons", { headers }),
+        ]);
+
+        if (couponsRes.ok) {
+          const couponsData = await couponsRes.json();
+          if (couponsData.success && Array.isArray(couponsData.coupons)) {
+            setCoupons(couponsData.coupons);
           }
         }
         if (staffRes.ok) {
@@ -258,8 +278,9 @@ export default function AdminDashboardPage() {
         console.error("[Admin State Sync Error]:", err);
       }
     };
-    syncDatabaseState();
-  }, [isUserLoaded, user, router, loginAdmin, logoutAdmin, setOrders, setProducts]);
+
+    verifyAndSync();
+  }, [isUserLoaded, user, router, loginAdmin, logoutAdmin, setOrders, setProducts, setCoupons, setStaffMembers, setAdminRole]);
 
   const handleAdminLogout = async () => {
     try {
@@ -458,8 +479,9 @@ export default function AdminDashboardPage() {
   const lowStockCount = products.filter((p) => p.stockCount <= 5).length;
   const processingOrdersCount = orders.filter((o) => o.status === "Processing").length;
 
-  // Role switching
+  // Role switching (Only authenticated Main Admins can toggle preview mode)
   const handleSwitchToStaff = () => {
+    if (!isActualMaster) return;
     setAdminRole("normal");
     if (["landing-cms", "hero", "coupons", "customers", "staff", "settings", "reviews", "faqs"].includes(activeTab)) {
       setActiveTab("overview");
@@ -468,6 +490,7 @@ export default function AdminDashboardPage() {
   };
 
   const handleReturnToMainAdmin = () => {
+    if (!isActualMaster) return;
     setAdminRole("main");
     showToast("Returned to Main Admin (Chandan Thakur — Full Access)");
   };
@@ -755,29 +778,100 @@ export default function AdminDashboardPage() {
     showToast(`✅ Successfully imported ${addedCount} rate items into matrix!`);
   };
 
-  // COUPON HANDLERS
-  const handleCreateCoupon = (e: React.FormEvent) => {
+  // FULL-STACK COUPON HANDLERS
+  const handleCreateCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isMaster) return;
-    addCoupon({
-      code: newCoupon.code.toUpperCase().trim(),
+    const cleanCode = newCoupon.code.toUpperCase().trim();
+    if (!cleanCode || cleanCode.length < 3) {
+      showToast("❌ Coupon code must be at least 3 characters.");
+      return;
+    }
+    const val = Number(newCoupon.discountValue) || 0;
+    if (val <= 0) {
+      showToast("❌ Discount value must be greater than zero.");
+      return;
+    }
+
+    const payload = {
+      code: cleanCode,
       discountType: newCoupon.discountType,
-      discountValue: Number(newCoupon.discountValue),
-      minSpend: Number(newCoupon.minSpend),
+      discountValue: val,
+      minSpend: Number(newCoupon.minSpend) || 0,
       active: true,
       usageCount: 0,
-    });
+    };
+
+    addCoupon(payload);
     setIsAddCouponOpen(false);
-    showToast(`✅ Created coupon code "${newCoupon.code.toUpperCase()}"!`);
+    showToast(`✅ Created coupon code "${cleanCode}"!`);
     setNewCoupon({ code: "", discountType: "percent", discountValue: 10, minSpend: 1500 });
+
+    try {
+      const headers = await getAdminAuthHeaders();
+      const res = await fetch("/api/admin/coupons", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        console.error("Failed to persist coupon in Supabase");
+      }
+    } catch (err) {
+      console.error("Coupon persist network error:", err);
+    }
   };
 
-  const handleSaveCouponEdit = (e: React.FormEvent) => {
+  const handleSaveCouponEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingCoupon || !isMaster) return;
     updateCoupon(editingCoupon.code, editingCoupon);
     setIsEditCouponOpen(false);
     showToast(`✅ Saved changes to coupon "${editingCoupon.code}"!`);
+    try {
+      const headers = await getAdminAuthHeaders();
+      await fetch("/api/admin/coupons", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(editingCoupon),
+      });
+    } catch (err) {
+      console.error("Coupon edit persist network error:", err);
+    }
+  };
+
+  const handleToggleCoupon = async (code: string, currentActive: boolean) => {
+    if (!isMaster) return;
+    const newActive = !currentActive;
+    toggleCoupon(code);
+    showToast(`${newActive ? "🟢 Activated" : "⏸️ Paused"} coupon "${code}".`);
+    try {
+      const headers = await getAdminAuthHeaders();
+      await fetch("/api/admin/coupons", {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ code, active: newActive }),
+      });
+    } catch (err) {
+      console.error("Coupon status toggle network error:", err);
+    }
+  };
+
+  const handleDeleteCoupon = async (code: string) => {
+    if (!isMaster) return;
+    if (confirm(`Are you sure you want to completely delete coupon "${code}"?`)) {
+      deleteCoupon(code);
+      showToast(`🗑️ Deleted coupon "${code}".`);
+      try {
+        const headers = await getAdminAuthHeaders();
+        await fetch(`/api/admin/coupons?code=${encodeURIComponent(code)}`, {
+          method: "DELETE",
+          headers,
+        });
+      } catch (err) {
+        console.error("Coupon deletion network error:", err);
+      }
+    }
   };
 
   // STAFF HANDLERS
@@ -1005,23 +1099,29 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* STAFF PREVIEW NOTIFICATION BANNER (ONLY visible when Master is previewing Staff view) */}
+      {/* STAFF NOTIFICATION BANNER */}
       {isNormal && (
         <div className="bg-gradient-to-r from-blue-900/90 via-indigo-900/90 to-blue-900/90 border-b border-blue-500/40 px-4 py-2 text-xs flex items-center justify-between text-blue-100">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-            <span className="font-bold">Store Staff (Normal Admin) View:</span>
+            <span className="font-bold">
+              {isActualMaster ? "Store Staff Preview Mode:" : "Store Staff Operational Session:"}
+            </span>
             <span className="text-blue-200 hidden sm:inline">
-              Only stock adjusting, order fulfillment, and wholesale matrix lookup are accessible.
+              {isActualMaster
+                ? "Previewing how staff operates. Only stock adjusting, order fulfillment, and wholesale matrix lookup are accessible."
+                : `Logged in as ${adminEmail || loggedInEmail}. Operational desks only.`}
             </span>
           </div>
-          <button
-            onClick={handleReturnToMainAdmin}
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold text-[11px] transition shadow-md shadow-red-600/30"
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Return to Main Admin ↩</span>
-          </button>
+          {isActualMaster && (
+            <button
+              onClick={handleReturnToMainAdmin}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold text-[11px] transition shadow-md shadow-red-600/30"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Return to Main Admin ↩</span>
+            </button>
+          )}
         </div>
       )}
 
@@ -2272,57 +2372,65 @@ export default function AdminDashboardPage() {
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {coupons.map((c) => (
-                  <div
-                    key={c.code}
-                    className="bg-[#121824] border border-slate-800 rounded-2xl p-5 relative overflow-hidden"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-mono font-black text-base text-white tracking-wider">
-                        {c.code}
-                      </span>
-                      <button
-                        onClick={() => toggleCoupon(c.code)}
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          c.active
-                            ? "bg-emerald-500/20 text-emerald-400"
-                            : "bg-slate-800 text-slate-400"
-                        }`}
-                      >
-                        {c.active ? "ACTIVE" : "PAUSED"}
-                      </button>
+              {coupons.length === 0 ? (
+                <div className="bg-[#121824] border border-slate-800 rounded-2xl p-8 text-center text-slate-400">
+                  <Tag className="w-8 h-8 mx-auto mb-2 opacity-40 text-red-500" />
+                  <p className="font-bold text-white">No promotional coupons created yet</p>
+                  <p className="text-xs text-slate-400 mt-1">Click &quot;Create New Coupon&quot; to provision discount codes saved directly to Supabase.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {coupons.map((c) => (
+                    <div
+                      key={c.code}
+                      className="bg-[#121824] border border-slate-800 rounded-2xl p-5 relative overflow-hidden"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-mono font-black text-base text-white tracking-wider">
+                          {c.code}
+                        </span>
+                        <button
+                          onClick={() => handleToggleCoupon(c.code, c.active)}
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            c.active
+                              ? "bg-emerald-500/20 text-emerald-400"
+                              : "bg-slate-800 text-slate-400"
+                          }`}
+                        >
+                          {c.active ? "ACTIVE" : "PAUSED"}
+                        </button>
+                      </div>
+                      <div className="text-xl font-bold text-red-400 mt-1">
+                        {c.discountType === "percent"
+                          ? `${c.discountValue}% OFF`
+                          : `Rs. ${c.discountValue} OFF`}
+                      </div>
+                      <div className="text-[11px] text-slate-400 mt-2">
+                        Min Spend: Rs. {c.minSpend.toLocaleString()} • Redemptions: {c.usageCount}
+                      </div>
+                      <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                        <button
+                          onClick={() => {
+                            setEditingCoupon({ ...c });
+                            setIsEditCouponOpen(true);
+                          }}
+                          className="text-slate-400 hover:text-white text-xs font-semibold flex items-center gap-1 transition"
+                        >
+                          <Edit className="w-3.5 h-3.5" />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCoupon(c.code)}
+                          className="text-slate-500 hover:text-red-400 text-xs font-semibold flex items-center gap-1 transition"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Remove</span>
+                        </button>
+                      </div>
                     </div>
-                    <div className="text-xl font-bold text-red-400 mt-1">
-                      {c.discountType === "percent"
-                        ? `${c.discountValue}% OFF`
-                        : `Rs. ${c.discountValue} OFF`}
-                    </div>
-                    <div className="text-[11px] text-slate-400 mt-2">
-                      Min Spend: Rs. {c.minSpend.toLocaleString()} • Redemptions: {c.usageCount}
-                    </div>
-                    <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
-                      <button
-                        onClick={() => {
-                          setEditingCoupon({ ...c });
-                          setIsEditCouponOpen(true);
-                        }}
-                        className="text-slate-400 hover:text-white text-xs font-semibold flex items-center gap-1 transition"
-                      >
-                        <Edit className="w-3.5 h-3.5" />
-                        <span>Edit</span>
-                      </button>
-                      <button
-                        onClick={() => deleteCoupon(c.code)}
-                        className="text-slate-500 hover:text-red-400 text-xs font-semibold flex items-center gap-1 transition"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>Remove</span>
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -2349,31 +2457,43 @@ export default function AdminDashboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/60">
-                    {customers.map((c) => (
-                      <tr key={c.id} className="hover:bg-slate-800/20 transition">
-                        <td className="py-3 px-4">
-                          <div className="font-bold text-white">{c.name}</div>
-                          <div className="text-[10px] text-slate-400 font-mono">{c.id}</div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="text-slate-300">{c.email}</div>
-                          <div className="text-[10px] text-slate-400">{c.phone}</div>
-                        </td>
-                        <td className="py-3 px-4 text-slate-300">{c.city}</td>
-                        <td className="py-3 px-4 text-center font-bold text-white">{c.ordersCount}</td>
-                        <td className="py-3 px-4 text-right font-mono font-bold text-emerald-400">
-                          Rs. {c.totalSpent.toLocaleString()}
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <button
-                            onClick={() => setSelectedCustomer(c)}
-                            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-[11px] transition"
-                          >
-                            View History
-                          </button>
+                    {customers.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-12 text-center text-slate-400">
+                          <Users className="w-8 h-8 mx-auto mb-2 opacity-40 text-slate-500" />
+                          <p className="font-bold text-white text-sm">No customer accounts recorded yet</p>
+                          <p className="text-xs text-slate-400 mt-1">
+                            Customer profiles, order frequency, and lifetime spend are compiled live from verified database orders.
+                          </p>
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      customers.map((c) => (
+                        <tr key={c.id} className="hover:bg-slate-800/20 transition">
+                          <td className="py-3 px-4">
+                            <div className="font-bold text-white">{c.name}</div>
+                            <div className="text-[10px] text-slate-400 font-mono">{c.id}</div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="text-slate-300">{c.email}</div>
+                            <div className="text-[10px] text-slate-400">{c.phone}</div>
+                          </td>
+                          <td className="py-3 px-4 text-slate-300">{c.city}</td>
+                          <td className="py-3 px-4 text-center font-bold text-white">{c.ordersCount}</td>
+                          <td className="py-3 px-4 text-right font-mono font-bold text-emerald-400">
+                            Rs. {c.totalSpent.toLocaleString()}
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <button
+                              onClick={() => setSelectedCustomer(c)}
+                              className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-[11px] transition"
+                            >
+                              View History
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

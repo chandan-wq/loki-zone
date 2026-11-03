@@ -91,7 +91,7 @@ export default function CheckoutPage() {
   const shippingFee = isFreeShipping ? 0 : standardShipping;
   const grandTotal = Math.max(0, subtotal - discountAmount + shippingFee);
 
-  const handleApplyCoupon = (e: React.FormEvent) => {
+  const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     setPromoError("");
     setPromoSuccess("");
@@ -99,6 +99,37 @@ export default function CheckoutPage() {
     if (!promoInput.trim()) return;
 
     const codeToSearch = promoInput.trim().toUpperCase();
+
+    // 1. Live database coupon validation
+    try {
+      const res = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: codeToSearch, subtotal }),
+      });
+      const data = await res.json();
+      if (res.ok && data.valid) {
+        applyCoupon({
+          code: data.code,
+          discountType: data.discountType,
+          discountValue: data.discountValue,
+        });
+        setPromoSuccess(
+          `Coupon ${data.code} applied! (${
+            data.discountType === "percent"
+              ? `${data.discountValue}% OFF`
+              : `NPR ${data.discountValue} OFF`
+          })`
+        );
+        setPromoInput("");
+        return;
+      } else if (!res.ok && data.error && !data.error.toLowerCase().includes("invalid")) {
+        setPromoError(data.error);
+        return;
+      }
+    } catch {}
+
+    // 2. Client-side fallback
     const foundCoupon = coupons.find(
       (c) => c.code.toUpperCase() === codeToSearch
     );

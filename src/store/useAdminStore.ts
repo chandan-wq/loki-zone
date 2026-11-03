@@ -272,6 +272,7 @@ interface AdminState {
 
   // Coupons / Promo Engine
   coupons: CouponCMS[];
+  setCoupons: (coupons: CouponCMS[]) => void;
   addCoupon: (coupon: CouponCMS) => void;
   updateCoupon: (code: string, updated: Partial<CouponCMS>) => void;
   deleteCoupon: (code: string) => void;
@@ -660,7 +661,39 @@ export const useAdminStore = create<AdminState>()(
     });
   },
 
-  setOrders: (orders) => set({ orders }),
+  setOrders: (orders) => {
+    const map = new Map<string, CustomerRecord>();
+    orders.forEach((o, idx) => {
+      const key = (o.email || o.phone || o.customerName || `unknown-${idx}`).toLowerCase().trim();
+      if (!key) return;
+      const existing = map.get(key);
+      if (existing) {
+        existing.ordersCount += 1;
+        existing.totalSpent += Number(o.total) || 0;
+        if (o.city && o.city !== "Nepal") existing.city = o.city;
+        if (o.customerName && (!existing.name || existing.name === "Customer")) {
+          existing.name = o.customerName;
+        }
+      } else {
+        map.set(key, {
+          id: `CUST-${String(map.size + 1).padStart(3, "0")}`,
+          name: o.customerName || "Customer",
+          email: o.email || "N/A",
+          phone: o.phone || "N/A",
+          city: o.city || "Kathmandu",
+          ordersCount: 1,
+          totalSpent: Number(o.total) || 0,
+          joinedDate: o.date || new Date().toISOString().split("T")[0],
+        });
+      }
+    });
+
+    const derivedCustomers = Array.from(map.values());
+    set({
+      orders,
+      customers: derivedCustomers,
+    });
+  },
 
   syncOrdersFromDB: async () => {
     try {
@@ -671,7 +704,7 @@ export const useAdminStore = create<AdminState>()(
       if (!res.ok) return;
       const data = await res.json();
       if (data.success && Array.isArray(data.orders)) {
-        set({ orders: data.orders });
+        get().setOrders(data.orders);
       }
     } catch {
       // Keep existing orders
@@ -766,6 +799,8 @@ export const useAdminStore = create<AdminState>()(
     })),
 
   // Coupons / Promo Engine
+  setCoupons: (coupons) => set({ coupons }),
+
   addCoupon: (newCoupon) =>
     set((state) => ({ coupons: [newCoupon, ...state.coupons] })),
 
@@ -1345,42 +1380,11 @@ export const useAdminStore = create<AdminState>()(
       },
     })),
 
-  // Customer Directory
-  customers: [
-    {
-      id: "CUST-001",
-      name: "Rohan Sharma",
-      email: "rohan.sharma@example.com",
-      phone: "9841000000",
-      city: "Kathmandu",
-      ordersCount: 3,
-      totalSpent: 7497,
-      joinedDate: "Aug 12, 2026",
-    },
-    {
-      id: "CUST-002",
-      name: "Aayush Adhikari",
-      email: "aayush.adh@gmail.com",
-      phone: "9818223344",
-      city: "Pokhara",
-      ordersCount: 2,
-      totalSpent: 9498,
-      joinedDate: "Sep 01, 2026",
-    },
-    {
-      id: "CUST-003",
-      name: "Sunil Shrestha",
-      email: "sunil.sh@outlook.com",
-      phone: "9803112233",
-      city: "Lalitpur",
-      ordersCount: 1,
-      totalSpent: 1299,
-      joinedDate: "Oct 17, 2026",
-    },
-  ],
+  // Customer Directory (Computed dynamically from real database orders)
+  customers: [],
 }),
 {
-  name: "loki_admin_store_v5",
+  name: "loki_admin_store_v6",
   storage: createJSONStorage(() => localStorage),
 }
 )
