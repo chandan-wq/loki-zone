@@ -1,15 +1,27 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { ChevronDown, HelpCircle, Phone, ArrowRight } from "lucide-react";
 import { useAdminStore } from "@/store/useAdminStore";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 export default function HomeFAQSection() {
-  const { faqs, storeSettings } = useAdminStore();
+  const { faqs, setFaqs, storeSettings } = useAdminStore();
   const [openId, setOpenId] = useState<string>("FAQ-001");
   const { ref: sectionRef, isVisible } = useScrollReveal({ threshold: 0.1 });
+
+  // Sync latest FAQs from database
+  useEffect(() => {
+    fetch("/api/faqs")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.faqs) && data.faqs.length > 0) {
+          setFaqs(data.faqs);
+        }
+      })
+      .catch(() => {});
+  }, [setFaqs]);
 
   const displayFaqs = faqs && faqs.length > 0 ? faqs : [];
 

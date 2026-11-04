@@ -1,13 +1,25 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Star, CheckCircle2, Award } from "lucide-react";
 import { useAdminStore } from "@/store/useAdminStore";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 export default function PlayerReviewsSection() {
-  const { reviews } = useAdminStore();
+  const { reviews, setReviews } = useAdminStore();
   const { ref: sectionRef, isVisible } = useScrollReveal({ threshold: 0.1 });
+
+  // Sync latest reviews from database
+  useEffect(() => {
+    fetch("/api/reviews")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.reviews) && data.reviews.length > 0) {
+          setReviews(data.reviews);
+        }
+      })
+      .catch(() => {});
+  }, [setReviews]);
 
   const displayReviews = reviews && reviews.length > 0 ? reviews : [];
 

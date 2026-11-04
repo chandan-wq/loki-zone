@@ -17,9 +17,21 @@ import {
 import { useAdminStore } from "@/store/useAdminStore";
 
 export default function HeroSection() {
-  const { heroSlides } = useAdminStore();
+  const { heroSlides, setHeroSlides } = useAdminStore();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+
+  // Sync latest live slides from database
+  useEffect(() => {
+    fetch("/api/hero")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.slides) && data.slides.length > 0) {
+          setHeroSlides(data.slides);
+        }
+      })
+      .catch(() => {});
+  }, [setHeroSlides]);
 
   // One-time cleanup for stale local cache if corrupted
   useEffect(() => {

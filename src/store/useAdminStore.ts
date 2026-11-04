@@ -244,6 +244,7 @@ interface AdminState {
 
   // Hero Section CMS Data
   heroSlides: HeroSlideCMS[];
+  setHeroSlides: (slides: HeroSlideCMS[]) => void;
   floatingPills: FloatingPillCMS[];
   updateHeroSlide: (id: number, updated: Partial<HeroSlideCMS>) => void;
   addHeroSlide: (slide: HeroSlideCMS) => void;
@@ -266,6 +267,7 @@ interface AdminState {
 
   // Wholesale Rate Sheet Items (Q4)
   rateSheetItems: RateSheetItem[];
+  setRateSheetItems: (items: RateSheetItem[]) => void;
   addRateSheetItem: (item: RateSheetItem) => void;
   updateRateSheetItem: (sku: string, updated: Partial<RateSheetItem>) => void;
   deleteRateSheetItem: (sku: string) => void;
@@ -281,16 +283,19 @@ interface AdminState {
 
   // Store Configuration Settings
   storeSettings: StoreSettingsCMS;
+  setStoreSettings: (settings: StoreSettingsCMS) => void;
   updateStoreSettings: (settings: Partial<StoreSettingsCMS>) => void;
 
   // Customer & Player Reviews CMS
   reviews: ReviewCMS[];
+  setReviews: (reviews: ReviewCMS[]) => void;
   addReview: (review: ReviewCMS) => void;
   updateReview: (id: string, updated: Partial<ReviewCMS>) => void;
   deleteReview: (id: string) => void;
 
   // FAQ CMS
   faqs: FAQItemCMS[];
+  setFaqs: (faqs: FAQItemCMS[]) => void;
   addFAQ: (faq: FAQItemCMS) => void;
   updateFAQ: (id: string, updated: Partial<FAQItemCMS>) => void;
   deleteFAQ: (id: string) => void;
@@ -335,6 +340,8 @@ interface AdminState {
 
   // Customers Directory
   customers: CustomerRecord[];
+  setCustomers: (customers: CustomerRecord[]) => void;
+  setLandingCMS: (cms: any) => void;
 }
 
 export const useAdminStore = create<AdminState>()(
@@ -545,6 +552,8 @@ export const useAdminStore = create<AdminState>()(
       link: "/category/apparel?type=shorts",
     },
   ],
+
+  setHeroSlides: (slides) => set({ heroSlides: slides }),
 
   updateHeroSlide: (id, updated) =>
     set((state) => ({
@@ -783,6 +792,8 @@ export const useAdminStore = create<AdminState>()(
     },
   ],
 
+  setRateSheetItems: (items) => set({ rateSheetItems: items }),
+
   addRateSheetItem: (item) =>
     set((state) => ({ rateSheetItems: [item, ...state.rateSheetItems] })),
 
@@ -842,6 +853,8 @@ export const useAdminStore = create<AdminState>()(
     vatRate: 0,
   },
 
+  setStoreSettings: (settings) => set({ storeSettings: settings }),
+
   updateStoreSettings: (newSettings) =>
     set((state) => ({
       storeSettings: { ...state.storeSettings, ...newSettings },
@@ -895,6 +908,8 @@ export const useAdminStore = create<AdminState>()(
     },
   ],
 
+  setReviews: (reviews) => set({ reviews }),
+
   addReview: (review) =>
     set((state) => ({ reviews: [review, ...state.reviews] })),
 
@@ -946,6 +961,8 @@ export const useAdminStore = create<AdminState>()(
       category: "warranty",
     },
   ],
+
+  setFaqs: (faqs) => set({ faqs }),
 
   addFAQ: (faq) => set((state) => ({ faqs: [...state.faqs, faq] })),
 
@@ -1382,6 +1399,16 @@ export const useAdminStore = create<AdminState>()(
 
   // Customer Directory (Computed dynamically from real database orders)
   customers: [],
+  setCustomers: (customers) => set({ customers }),
+  setLandingCMS: (cms) =>
+    set((state) => ({
+      horizontalShowcase: cms.horizontalShowcase || state.horizontalShowcase,
+      categorySection: cms.categorySection || state.categorySection,
+      equipmentFinder: cms.equipmentFinder || state.equipmentFinder,
+      bestSellersCMS: cms.bestSellersCMS || state.bestSellersCMS,
+      brandStory: cms.brandStory || state.brandStory,
+      ctaBanner: cms.ctaBanner || state.ctaBanner,
+    })),
 }),
 {
   name: "loki_admin_store_v6",

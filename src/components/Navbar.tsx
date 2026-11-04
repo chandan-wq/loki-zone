@@ -53,7 +53,19 @@ export default function Navbar() {
   const { user, isLoaded, isSignedIn } = useUser();
   const { signOut } = useClerk();
   const { openCart, getItemCount } = useCartStore();
-  const { storeSettings, logoutAdmin, syncProductsFromDB } = useAdminStore();
+  const { storeSettings, setStoreSettings, logoutAdmin, syncProductsFromDB } = useAdminStore();
+
+  // Sync store settings (announcement bar, contact) live from database
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.settings) {
+          setStoreSettings(data.settings);
+        }
+      })
+      .catch(() => {});
+  }, [setStoreSettings]);
   const itemCount = getItemCount();
 
   useEffect(() => {

@@ -27,6 +27,7 @@ import {
   Sparkles,
   TrendingUp,
   ChevronRight,
+  ArrowRight,
   Save,
   UploadCloud,
   X,
@@ -118,6 +119,7 @@ export default function AdminDashboardPage() {
     deleteProduct,
     adjustStock,
     heroSlides,
+    setHeroSlides,
     updateHeroSlide,
     addHeroSlide,
     deleteHeroSlide,
@@ -132,6 +134,7 @@ export default function AdminDashboardPage() {
     updateOrderStatus,
     updateOrderCourierNote,
     rateSheetItems,
+    setRateSheetItems,
     addRateSheetItem,
     updateRateSheetItem,
     deleteRateSheetItem,
@@ -142,8 +145,10 @@ export default function AdminDashboardPage() {
     deleteCoupon,
     toggleCoupon,
     storeSettings,
+    setStoreSettings,
     updateStoreSettings,
     customers,
+    setCustomers,
     staffMembers,
     addStaffMember,
     removeStaffMember,
@@ -151,15 +156,18 @@ export default function AdminDashboardPage() {
     setStaffMembers,
     syncStaffFromDB,
     reviews,
+    setReviews,
     addReview,
     updateReview,
     deleteReview,
     faqs,
+    setFaqs,
     addFAQ,
     updateFAQ,
     deleteFAQ,
     ctaBanner,
     updateCTABanner,
+    setLandingCMS,
   } = useAdminStore();
 
   const isMaster = adminRole === "main";
@@ -219,14 +227,33 @@ export default function AdminDashboardPage() {
       setAdminRole(verifiedRole);
       setIsClientReady(true);
 
-      // Synchronize live database orders, coupons, staff roster, and catalog
+      // Synchronize live database orders, coupons, staff roster, catalog, customers, settings, hero, reviews, faqs, rates, landing-cms
       try {
         const headers = await getAdminAuthHeaders();
-        const [ordersRes, prodsRes, staffRes, couponsRes] = await Promise.all([
+        const [
+          ordersRes,
+          prodsRes,
+          staffRes,
+          couponsRes,
+          customersRes,
+          settingsRes,
+          heroRes,
+          reviewsRes,
+          faqsRes,
+          ratesRes,
+          landingRes,
+        ] = await Promise.all([
           fetch("/api/admin/orders", { headers }),
           fetch("/api/admin/products", { headers }),
           fetch("/api/admin/staff", { headers }),
           fetch("/api/admin/coupons", { headers }),
+          fetch("/api/admin/customers", { headers }),
+          fetch("/api/admin/settings", { headers }),
+          fetch("/api/admin/hero", { headers }),
+          fetch("/api/admin/reviews", { headers }),
+          fetch("/api/admin/faqs", { headers }),
+          fetch("/api/admin/rates", { headers }),
+          fetch("/api/admin/landing-cms", { headers }),
         ]);
 
         if (couponsRes.ok) {
@@ -245,6 +272,49 @@ export default function AdminDashboardPage() {
           const ordersData = await ordersRes.json();
           if (ordersData.success && Array.isArray(ordersData.orders)) {
             setOrders(ordersData.orders);
+          }
+        }
+        if (customersRes.ok) {
+          const custData = await customersRes.json();
+          if (custData.success && Array.isArray(custData.customers)) {
+            setCustomers(custData.customers);
+          }
+        }
+        if (settingsRes.ok) {
+          const settData = await settingsRes.json();
+          if (settData.success && settData.settings) {
+            setStoreSettings(settData.settings);
+            setSettingsForm(settData.settings);
+          }
+        }
+        if (heroRes.ok) {
+          const heroData = await heroRes.json();
+          if (heroData.success && Array.isArray(heroData.slides)) {
+            setHeroSlides(heroData.slides);
+          }
+        }
+        if (reviewsRes.ok) {
+          const revData = await reviewsRes.json();
+          if (revData.success && Array.isArray(revData.reviews)) {
+            setReviews(revData.reviews);
+          }
+        }
+        if (faqsRes.ok) {
+          const faqsData = await faqsRes.json();
+          if (faqsData.success && Array.isArray(faqsData.faqs)) {
+            setFaqs(faqsData.faqs);
+          }
+        }
+        if (ratesRes.ok) {
+          const ratesData = await ratesRes.json();
+          if (ratesData.success && Array.isArray(ratesData.rateSheetItems)) {
+            setRateSheetItems(ratesData.rateSheetItems);
+          }
+        }
+        if (landingRes.ok) {
+          const landingData = await landingRes.json();
+          if (landingData.success && landingData.landingCMS) {
+            setLandingCMS(landingData.landingCMS);
           }
         }
         if (prodsRes.ok) {
@@ -408,6 +478,7 @@ export default function AdminDashboardPage() {
 
   // 6. CUSTOMER DETAILS DRAWER
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerRecord | null>(null);
+  const [customerSearch, setCustomerSearch] = useState("");
 
   // 7. STAFF STATE
   const [isAddStaffOpen, setIsAddStaffOpen] = useState(false);
@@ -663,7 +734,7 @@ export default function AdminDashboardPage() {
   };
 
   // HERO SLIDE HANDLERS
-  const handleCreateSlide = (e: React.FormEvent) => {
+  const handleCreateSlide = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isMaster) return;
     const nextId = Math.max(...heroSlides.map((s) => s.id), 0) + 1;
@@ -675,9 +746,39 @@ export default function AdminDashboardPage() {
     setSelectedSlideId(nextId);
     setIsAddSlideOpen(false);
     showToast(`✅ Created Slide #${nextId} "${created.titleLine1} ${created.titleLine2}"!`);
+    try {
+      const headers = await getAdminAuthHeaders();
+      await fetch("/api/admin/hero", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(created),
+      });
+    } catch (err) {
+      console.error("Failed to persist new slide:", err);
+    }
   };
 
-  const handleDeleteSlide = (id: number) => {
+  const handleSaveCurrentSlide = async () => {
+    if (!isMaster || !currentSlide) return;
+    try {
+      const headers = await getAdminAuthHeaders();
+      const res = await fetch("/api/admin/hero", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(currentSlide),
+      });
+      if (res.ok) {
+        showToast(`✅ Slide #${currentSlide.id} saved & live on homepage!`);
+      } else {
+        showToast("❌ Failed to save slide to database.");
+      }
+    } catch (err) {
+      console.error("Save slide error:", err);
+      showToast("❌ Network error saving slide.");
+    }
+  };
+
+  const handleDeleteSlide = async (id: number) => {
     if (!isMaster) return;
     if (heroSlides.length <= 1) {
       alert("At least one slide must remain active in the hero carousel.");
@@ -686,8 +787,19 @@ export default function AdminDashboardPage() {
     if (confirm(`Delete Slide #${id}?`)) {
       deleteHeroSlide(id);
       const remaining = heroSlides.filter((s) => s.id !== id);
-      setSelectedSlideId(remaining[0].id);
+      if (remaining.length > 0) {
+        setSelectedSlideId(remaining[0].id);
+      }
       showToast(`🗑️ Slide #${id} removed.`);
+      try {
+        const headers = await getAdminAuthHeaders();
+        await fetch(`/api/admin/hero?id=${id}`, {
+          method: "DELETE",
+          headers,
+        });
+      } catch (err) {
+        console.error("Delete slide error:", err);
+      }
     }
   };
 
@@ -725,20 +837,73 @@ export default function AdminDashboardPage() {
     updateFloatingPill(id, { [field]: value });
   };
 
-  // RATE SHEET HANDLERS
+
+  // WHOLESALE RATES HANDLERS
+  const handleAddRateItem = async (item: RateSheetItem) => {
+    addRateSheetItem(item);
+    if (!isMaster) return;
+    try {
+      const headers = await getAdminAuthHeaders();
+      await fetch("/api/admin/rates", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(item),
+      });
+      showToast(`✅ Saved ${item.sku} to wholesale rate matrix database!`);
+    } catch (e) {
+      console.error("Add rate item error:", e);
+    }
+  };
+
+  const handleUpdateRateItem = async (sku: string, updated: Partial<RateSheetItem>) => {
+    updateRateSheetItem(sku, updated);
+    if (!isMaster) return;
+    try {
+      const existing = rateSheetItems.find((r) => r.sku === sku);
+      const merged = { ...existing, ...updated, sku };
+      const headers = await getAdminAuthHeaders();
+      await fetch("/api/admin/rates", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(merged),
+      });
+      showToast(`✅ Rate update for ${sku} saved to database!`);
+    } catch (e) {
+      console.error("Update rate item error:", e);
+    }
+  };
+
+  const handleDeleteRateItem = async (sku: string, name: string) => {
+    if (!isMaster) return;
+    if (confirm(`Are you sure you want to remove "${name}" from wholesale rate matrix?`)) {
+      deleteRateSheetItem(sku);
+      showToast(`🗑️ Removed "${name}" from rate matrix.`);
+      try {
+        const headers = await getAdminAuthHeaders();
+        await fetch(`/api/admin/rates?sku=${encodeURIComponent(sku)}`, {
+          method: "DELETE",
+          headers,
+        });
+      } catch (e) {
+        console.error("Delete rate item error:", e);
+      }
+    }
+  };
+
+  // RATE SHEET MODAL HANDLERS
   const handleCreateRateItem = (e: React.FormEvent) => {
     e.preventDefault();
     if (!isMaster) return;
-    addRateSheetItem({
+    const item: RateSheetItem = {
       sku: newRateItem.sku.toUpperCase().trim(),
       name: newRateItem.name,
       retailNPR: Number(newRateItem.retailNPR),
       tier1_9: Number(newRateItem.tier1_9),
       tier10_49: Number(newRateItem.tier10_49),
       tier50plus: Number(newRateItem.tier50plus),
-    });
+    };
+    handleAddRateItem(item);
     setIsAddRateItemOpen(false);
-    showToast(`✅ Added "${newRateItem.name}" to Wholesale Rate Matrix!`);
     setNewRateItem({
       sku: "",
       name: "",
@@ -752,17 +917,8 @@ export default function AdminDashboardPage() {
   const handleSaveRateItemEdit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingRateItem || !isMaster) return;
-    updateRateSheetItem(editingRateItem.sku, editingRateItem);
+    handleUpdateRateItem(editingRateItem.sku, editingRateItem);
     setIsEditRateItemOpen(false);
-    showToast(`✅ Updated wholesale tiers for "${editingRateItem.name}"!`);
-  };
-
-  const handleDeleteRateItem = (sku: string, name: string) => {
-    if (!isMaster) return;
-    if (confirm(`Delete rate matrix row for "${name}" (${sku})?`)) {
-      deleteRateSheetItem(sku);
-      showToast(`🗑️ Removed ${sku} from matrix.`);
-    }
   };
 
   const handleProcessCsvUpload = (e: React.FormEvent) => {
@@ -971,15 +1127,29 @@ export default function AdminDashboardPage() {
   };
 
   // SETTINGS HANDLER
-  const handleSaveSettings = (e: React.FormEvent) => {
+  const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isMaster) return;
     updateStoreSettings(settingsForm);
-    showToast("✅ Store configuration & delivery tariffs saved!");
+    try {
+      const headers = await getAdminAuthHeaders();
+      const res = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(settingsForm),
+      });
+      if (res.ok) {
+        showToast("✅ Store configuration & tariffs saved to database!");
+        return;
+      }
+    } catch (err) {
+      console.error("Save settings error:", err);
+    }
+    showToast("✅ Store configuration updated locally.");
   };
 
   // REVIEWS HANDLERS
-  const handleCreateReview = (e: React.FormEvent) => {
+  const handleCreateReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isMaster) return;
     const newId = "REV-" + Date.now().toString().slice(-4);
@@ -1004,26 +1174,55 @@ export default function AdminDashboardPage() {
       verified: true,
     });
     showToast(`✅ Added player review from "${created.playerName}"!`);
+    try {
+      const headers = await getAdminAuthHeaders();
+      await fetch("/api/admin/reviews", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(created),
+      });
+    } catch (err) {
+      console.error("Save review error:", err);
+    }
   };
 
-  const handleSaveReviewEdit = (e: React.FormEvent) => {
+  const handleSaveReviewEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingReview || !isMaster) return;
     updateReview(editingReview.id, editingReview);
     setIsEditReviewOpen(false);
     showToast(`✅ Saved changes to review from "${editingReview.playerName}"!`);
+    try {
+      const headers = await getAdminAuthHeaders();
+      await fetch("/api/admin/reviews", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(editingReview),
+      });
+    } catch (err) {
+      console.error("Edit review error:", err);
+    }
   };
 
-  const handleDeleteReview = (id: string, name: string) => {
+  const handleDeleteReview = async (id: string, name: string) => {
     if (!isMaster) return;
     if (confirm(`Delete endorsement review from "${name}"?`)) {
       deleteReview(id);
       showToast(`🗑️ Removed review from "${name}".`);
+      try {
+        const headers = await getAdminAuthHeaders();
+        await fetch(`/api/admin/reviews?id=${encodeURIComponent(id)}`, {
+          method: "DELETE",
+          headers,
+        });
+      } catch (err) {
+        console.error("Delete review error:", err);
+      }
     }
   };
 
   // FAQS HANDLERS
-  const handleCreateFAQ = (e: React.FormEvent) => {
+  const handleCreateFAQ = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isMaster) return;
     const newId = "FAQ-" + Date.now().toString().slice(-4);
@@ -1041,30 +1240,70 @@ export default function AdminDashboardPage() {
       category: "shipping",
     });
     showToast(`✅ Added FAQ question!`);
+    try {
+      const headers = await getAdminAuthHeaders();
+      await fetch("/api/admin/faqs", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(created),
+      });
+    } catch (err) {
+      console.error("Save FAQ error:", err);
+    }
   };
 
-  const handleSaveFAQEdit = (e: React.FormEvent) => {
+  const handleSaveFAQEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingFAQ || !isMaster) return;
     updateFAQ(editingFAQ.id, editingFAQ);
     setIsEditFAQOpen(false);
     showToast(`✅ Saved FAQ item!`);
+    try {
+      const headers = await getAdminAuthHeaders();
+      await fetch("/api/admin/faqs", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(editingFAQ),
+      });
+    } catch (err) {
+      console.error("Edit FAQ error:", err);
+    }
   };
 
-  const handleDeleteFAQ = (id: string, question: string) => {
+  const handleDeleteFAQ = async (id: string, question: string) => {
     if (!isMaster) return;
     if (confirm(`Delete FAQ "${question.slice(0, 35)}..."?`)) {
       deleteFAQ(id);
       showToast(`🗑️ Removed FAQ item.`);
+      try {
+        const headers = await getAdminAuthHeaders();
+        await fetch(`/api/admin/faqs?id=${encodeURIComponent(id)}`, {
+          method: "DELETE",
+          headers,
+        });
+      } catch (err) {
+        console.error("Delete FAQ error:", err);
+      }
     }
   };
 
+
   // CTA BANNER HANDLER
-  const handleSaveCTABanner = (e: React.FormEvent) => {
+  const handleSaveCTABanner = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isMaster) return;
     updateCTABanner(ctaForm);
     showToast("✅ Pre-Footer Final CTA Banner updated & live on homepage!");
+    try {
+      const headers = await getAdminAuthHeaders();
+      await fetch("/api/admin/landing-cms", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ ctaBanner: ctaForm }),
+      });
+    } catch (err) {
+      console.error("Save CTA banner error:", err);
+    }
   };
 
   // NAVIGATION TABS BASED ON ROLE
@@ -1953,100 +2192,43 @@ export default function AdminDashboardPage() {
                       helperText="1920x1080 recommended for optimal sharpness across desktop and retina displays."
                     />
                   </div>
+                  <div className="sm:col-span-2 pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-800/80 mt-2">
+                    <p className="text-[11px] text-slate-400">
+                      Live preview updates instantly. Click to persist changes to the Supabase database.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleSaveCurrentSlide}
+                      className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition shadow-lg shadow-red-600/30 text-xs w-full sm:w-auto justify-center"
+                    >
+                      <Save className="w-4 h-4" />
+                      <span>Save Slide #{currentSlide.id} to Database</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              {/* Floating Pills CMS */}
+              {/* Section 2 Category Showcase Link */}
               <div className="bg-[#121824] border border-slate-800 rounded-2xl p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-bold text-white">Floating Category Navigation Pills CMS</h3>
-                  <button
-                    onClick={() => setIsAddPillOpen(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-red-600/30"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Add Category Pill</span>
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-                  {floatingPills.map((pill) => (
-                    <div key={pill.id} className="bg-[#0b0f17] border border-slate-800 rounded-xl p-4 space-y-2 relative">
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-2">
-                          <Image src={pill.image} alt={pill.label} width={24} height={24} className="object-contain" />
-                          <span className="font-bold text-white">{pill.label} Pill</span>
-                        </div>
-                        {floatingPills.length > 1 && (
-                          <button
-                            onClick={() => handleDeletePill(pill.id, pill.label)}
-                            className="text-slate-500 hover:text-red-400 p-1"
-                            title="Delete Pill"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                      <div>
-                        <label className="text-[10px] text-slate-400 block">Label</label>
-                        <input
-                          type="text"
-                          value={pill.label}
-                          onChange={(e) => handlePillChange(pill.id, "label", e.target.value)}
-                          className="w-full px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] text-slate-400 block">Target Link</label>
-                        <input
-                          type="text"
-                          value={pill.link}
-                          onChange={(e) => handlePillChange(pill.id, "link", e.target.value)}
-                          className="w-full px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono text-[11px]"
-                        />
-                      </div>
-                      <div>
-                        <div className="flex items-center justify-between">
-                          <label className="text-[10px] text-slate-400 block">Pill Icon</label>
-                          <label className="cursor-pointer text-[10px] text-red-400 hover:text-red-300 font-bold flex items-center gap-0.5">
-                            <UploadCloud className="w-3 h-3" />
-                            <span>Upload</span>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={async (e) => {
-                                const f = e.target.files?.[0];
-                                if (!f) return;
-                                try {
-                                  const headers = await getAdminAuthHeaders();
-                                  const h = { ...headers };
-                                  delete h["Content-Type"];
-                                  delete h["content-type"];
-                                  const fd = new FormData();
-                                  fd.append("file", f);
-                                  const res = await fetch("/api/admin/upload", { method: "POST", headers: h, body: fd });
-                                  const data = await res.json();
-                                  if (data.success && data.url) {
-                                    handlePillChange(pill.id, "image", data.url);
-                                    showToast("✅ Uploaded icon for pill!");
-                                  }
-                                } catch {
-                                  showToast("❌ Failed to upload icon.");
-                                }
-                              }}
-                            />
-                          </label>
-                        </div>
-                        <input
-                          type="text"
-                          value={pill.image}
-                          onChange={(e) => handlePillChange(pill.id, "image", e.target.value)}
-                          placeholder="/images/... or https://..."
-                          className="w-full px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono text-[10px]"
-                        />
-                      </div>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 font-bold text-[10px] uppercase tracking-wider mb-2">
+                      <Layers className="w-3 h-3" />
+                      <span>Home Page Section #2</span>
                     </div>
-                  ))}
+                    <h3 className="text-base font-black text-white tracking-tight">Shop by Category Showcase (Section 2)</h3>
+                    <p className="text-xs text-slate-400 mt-1 max-w-xl">
+                      Floating mini-pills have been upgraded to the modern full-width "Shop by Category" showcase. Manage all category cards, product images, and video highlights in the Landing Page Studio.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("landing-cms")}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition flex-shrink-0"
+                  >
+                    <span>Open Category CMS Studio</span>
+                    <ArrowRight className="w-4 h-4 text-red-400" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -2254,14 +2436,9 @@ export default function AdminDashboardPage() {
             <WholesaleRateMatrix
               isMaster={isMaster}
               rateSheetItems={rateSheetItems}
-              onAddRateItem={addRateSheetItem}
-              onUpdateRateItem={updateRateSheetItem}
-              onDeleteRateItem={(sku, name) => {
-                if (confirm(`Are you sure you want to remove "${name}" from wholesale rate matrix?`)) {
-                  deleteRateSheetItem(sku);
-                  showToast(`🗑️ Removed "${name}" from rate matrix.`);
-                }
-              }}
+              onAddRateItem={handleAddRateItem}
+              onUpdateRateItem={handleUpdateRateItem}
+              onDeleteRateItem={handleDeleteRateItem}
               showToast={showToast}
             />
           )}
@@ -2493,13 +2670,68 @@ export default function AdminDashboardPage() {
           {/* TAB 7: CUSTOMERS CRM (MAIN ADMIN ONLY) */}
           {activeTab === "customers" && isMaster && (
             <div className="space-y-4">
-              <div className="bg-[#121824] border border-slate-800 rounded-2xl p-5">
-                <h2 className="text-lg font-black text-white tracking-tight">Customer Directory &amp; Lifetime Value</h2>
-                <p className="text-xs text-slate-400 mt-1">
-                  Directory of customer accounts, click any customer to view past orders and details.
-                </p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#121824] border border-slate-800 rounded-2xl p-5">
+                <div>
+                  <h2 className="text-lg font-black text-white tracking-tight flex items-center gap-2">
+                    <span>Customer CRM Directory &amp; Lifetime Value</span>
+                    <span className="text-xs bg-slate-800 px-2.5 py-0.5 rounded-full text-slate-300 font-mono">
+                      {customers.length} Profiles
+                    </span>
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Live database registry of customer accounts, contact information, order frequency, and lifetime spend.
+                  </p>
+                </div>
+                <div className="relative w-full sm:w-72">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Search by name, phone, city..."
+                    value={customerSearch}
+                    onChange={(e) => setCustomerSearch(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 bg-[#0b0f17] border border-slate-700 rounded-xl text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-red-500"
+                  />
+                  {customerSearch && (
+                    <button
+                      onClick={() => setCustomerSearch("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
 
+              {/* CRM Key Metrics Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="bg-[#121824] border border-slate-800 rounded-2xl p-4">
+                  <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Total Customers</span>
+                  <div className="text-xl font-black text-white mt-1">{customers.length}</div>
+                </div>
+                <div className="bg-[#121824] border border-slate-800 rounded-2xl p-4">
+                  <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Total Customer LTV</span>
+                  <div className="text-xl font-black text-emerald-400 mt-1 font-mono">
+                    Rs. {customers.reduce((sum, c) => sum + (Number(c.totalSpent) || 0), 0).toLocaleString()}
+                  </div>
+                </div>
+                <div className="bg-[#121824] border border-slate-800 rounded-2xl p-4">
+                  <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Total Orders</span>
+                  <div className="text-xl font-black text-white mt-1">
+                    {customers.reduce((sum, c) => sum + (Number(c.ordersCount) || 0), 0)}
+                  </div>
+                </div>
+                <div className="bg-[#121824] border border-slate-800 rounded-2xl p-4">
+                  <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Avg Order Value</span>
+                  <div className="text-xl font-black text-blue-400 mt-1 font-mono">
+                    Rs. {Math.round(
+                      customers.reduce((sum, c) => sum + (Number(c.totalSpent) || 0), 0) /
+                      (customers.reduce((sum, c) => sum + (Number(c.ordersCount) || 0), 0) || 1)
+                    ).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+
+              {/* Customers Table */}
               <div className="bg-[#121824] border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
@@ -2513,42 +2745,75 @@ export default function AdminDashboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/60">
-                    {customers.length === 0 ? (
+                    {customers.filter((c) => {
+                      if (!customerSearch.trim()) return true;
+                      const q = customerSearch.toLowerCase().trim();
+                      return (
+                        c.name.toLowerCase().includes(q) ||
+                        c.email.toLowerCase().includes(q) ||
+                        c.phone.toLowerCase().includes(q) ||
+                        c.city.toLowerCase().includes(q) ||
+                        c.id.toLowerCase().includes(q)
+                      );
+                    }).length === 0 ? (
                       <tr>
                         <td colSpan={6} className="py-12 text-center text-slate-400">
                           <Users className="w-8 h-8 mx-auto mb-2 opacity-40 text-slate-500" />
-                          <p className="font-bold text-white text-sm">No customer accounts recorded yet</p>
+                          <p className="font-bold text-white text-sm">
+                            {customerSearch ? "No matching customer found" : "No customer accounts recorded yet"}
+                          </p>
                           <p className="text-xs text-slate-400 mt-1">
-                            Customer profiles, order frequency, and lifetime spend are compiled live from verified database orders.
+                            {customerSearch ? "Try searching with a different name, phone, or district." : "Customer profiles and lifetime spend are compiled live from verified database orders."}
                           </p>
                         </td>
                       </tr>
                     ) : (
-                      customers.map((c) => (
-                        <tr key={c.id} className="hover:bg-slate-800/20 transition">
-                          <td className="py-3 px-4">
-                            <div className="font-bold text-white">{c.name}</div>
-                            <div className="text-[10px] text-slate-400 font-mono">{c.id}</div>
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="text-slate-300">{c.email}</div>
-                            <div className="text-[10px] text-slate-400">{c.phone}</div>
-                          </td>
-                          <td className="py-3 px-4 text-slate-300">{c.city}</td>
-                          <td className="py-3 px-4 text-center font-bold text-white">{c.ordersCount}</td>
-                          <td className="py-3 px-4 text-right font-mono font-bold text-emerald-400">
-                            Rs. {c.totalSpent.toLocaleString()}
-                          </td>
-                          <td className="py-3 px-4 text-right">
-                            <button
-                              onClick={() => setSelectedCustomer(c)}
-                              className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-[11px] transition"
-                            >
-                              View History
-                            </button>
-                          </td>
-                        </tr>
-                      ))
+                      customers
+                        .filter((c) => {
+                          if (!customerSearch.trim()) return true;
+                          const q = customerSearch.toLowerCase().trim();
+                          return (
+                            c.name.toLowerCase().includes(q) ||
+                            c.email.toLowerCase().includes(q) ||
+                            c.phone.toLowerCase().includes(q) ||
+                            c.city.toLowerCase().includes(q) ||
+                            c.id.toLowerCase().includes(q)
+                          );
+                        })
+                        .map((c) => (
+                          <tr key={c.id} className="hover:bg-slate-800/20 transition">
+                            <td className="py-3 px-4">
+                              <div className="font-bold text-white">{c.name}</div>
+                              <div className="text-[10px] text-slate-400 font-mono">{c.id}</div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="text-slate-300">{c.email}</div>
+                              <div className="text-[10px] text-slate-400">{c.phone}</div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className="inline-block px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 text-[11px]">
+                                {c.city}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-center font-bold text-white">
+                              <span className="inline-block px-2 py-0.5 rounded-full bg-slate-800 text-slate-200">
+                                {c.ordersCount}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-right font-mono font-bold text-emerald-400">
+                              Rs. {c.totalSpent.toLocaleString()}
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              <button
+                                onClick={() => setSelectedCustomer(c)}
+                                className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-[11px] transition inline-flex items-center gap-1"
+                              >
+                                <span>View History</span>
+                                <ArrowRight className="w-3 h-3 text-slate-400" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))
                     )}
                   </tbody>
                 </table>
@@ -4259,19 +4524,57 @@ export default function AdminDashboardPage() {
               </div>
 
               <div>
-                <span className="font-bold text-slate-300 block mb-2">Customer Order Records</span>
-                <div className="space-y-2">
-                  {orders
-                    .filter((o) => o.customerName.toLowerCase() === selectedCustomer.name.toLowerCase() || o.phone === selectedCustomer.phone)
-                    .map((co) => (
-                      <div key={co.id} className="p-3 bg-[#0b0f17] border border-slate-800 rounded-xl flex items-center justify-between">
-                        <div>
-                          <div className="font-mono font-bold text-white">{co.id}</div>
-                          <div className="text-[10px] text-slate-400">{co.date} • {co.status}</div>
+                <span className="font-bold text-slate-300 block mb-2">Verified Database Order History</span>
+                <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                  {(() => {
+                    const custOrders = ((selectedCustomer as any).orders && (selectedCustomer as any).orders.length > 0)
+                      ? (selectedCustomer as any).orders
+                      : orders.filter((o) =>
+                          o.customerName.toLowerCase() === selectedCustomer.name.toLowerCase() ||
+                          (selectedCustomer.phone && o.phone === selectedCustomer.phone) ||
+                          (selectedCustomer.email && o.email?.toLowerCase() === selectedCustomer.email.toLowerCase())
+                        );
+
+                    if (custOrders.length === 0) {
+                      return (
+                        <div className="p-4 bg-[#0b0f17] border border-slate-800 rounded-xl text-center text-slate-500">
+                          No past order history found for this profile.
                         </div>
-                        <span className="font-mono font-bold text-emerald-400">Rs. {co.total.toLocaleString()}</span>
+                      );
+                    }
+
+                    return custOrders.map((co: any) => (
+                      <div key={co.id} className="p-3 bg-[#0b0f17] border border-slate-800 rounded-xl space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="font-mono font-bold text-white text-xs">{co.id}</span>
+                            <span className="text-[10px] text-slate-400 block">{co.date}</span>
+                          </div>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            co.status === "Delivered" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30" :
+                            co.status === "Dispatched" ? "bg-blue-500/10 text-blue-400 border border-blue-500/30" :
+                            co.status === "Cancelled" ? "bg-red-500/10 text-red-400 border border-red-500/30" :
+                            "bg-amber-500/10 text-amber-400 border border-amber-500/30"
+                          }`}>
+                            {co.status}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between pt-1 border-t border-slate-800/60 text-[11px]">
+                          <span className="text-slate-400">
+                            {co.paymentMethod || "Cash on Delivery"} • {co.city || selectedCustomer.city}
+                          </span>
+                          <span className="font-mono font-bold text-emerald-400">
+                            Rs. {co.total.toLocaleString()}
+                          </span>
+                        </div>
+                        {co.address && (
+                          <div className="text-[10px] text-slate-500 truncate">
+                            📍 {co.address}
+                          </div>
+                        )}
                       </div>
-                    ))}
+                    ));
+                  })()}
                 </div>
               </div>
 
