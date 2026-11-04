@@ -24,6 +24,7 @@ import {
   AlertCircle,
   Phone,
   Zap,
+  Smile,
 } from "lucide-react";
 import { useAdminStore } from "@/store/useAdminStore";
 import { useCartStore } from "@/store/useCartStore";
@@ -88,16 +89,16 @@ function LokiAIAgentContent() {
     {
       id: "welcome-1",
       sender: "ai",
-      text: "Namaste! 🙏 Ma LOKI Zone Nepal ko official AI Equipment & Rate Advisor hu.\n\nMa store admin le add/update gareko live equipment rates, warehouse stock, delivery charges, ra playstyle suggestions dinchhu. Tapaiko table tennis journey ma kasto equipment khojirahanu bhayeko chha?",
+      text: "Namaste bro! 🙏 Ma LOKI Zone Nepal ko official AI Coach & Rate Advisor hu.\n\nTapaile masanga normal kura garna saknu hunchha (Nepali / English ma), store ko live bat rates sodhna saknu hunchha, ya delivery ra discounts janna saknu hunchha!\n\nAaja kasto chaldaichha tapaiko table tennis game?",
       timestamp: "Just now",
-      badge: "LIVE SYNC",
+      badge: "LIVE ADVISOR",
       quickActions: [
-        { label: "🏓 Dragon 10 Carbon Rate", query: "What is the rate of Dragon 10?" },
-        { label: "⚡ Dragon 8 Attack Rate", query: "Tell me about Dragon 8 Pro rate" },
-        { label: "👟 Swift Court Shoes", query: "Show me court shoes rate and details" },
+        { label: "👋 K chha bro?", query: "k chha bro" },
+        { label: "🏓 Dragon 10 Carbon Rate", query: "Dragon 10 ko rate kati ho?" },
+        { label: "⚡ Dragon 8 Attack Rate", query: "Dragon 8 Pro ko rate kasto chha?" },
+        { label: "👟 Swift Court Shoes", query: "Show me court shoes rate" },
         { label: "💰 Rackets under NPR 2,500", query: "Rackets under NPR 2500" },
-        { label: "🚚 Delivery Charges", query: "What are the delivery charges?" },
-        { label: "🎟️ Any Active Coupons?", query: "Any active coupon codes?" },
+        { label: "🚚 Delivery Charges", query: "Delivery charges kati ho?" },
       ],
     },
   ]);
@@ -128,22 +129,22 @@ function LokiAIAgentContent() {
       {
         id: `welcome-${Date.now()}`,
         sender: "ai",
-        text: "Namaste! 🙏 Welcome back. Conversation reset भयो। Tapaiko table tennis game ko lagi kasto equipment ya rate janna chahanu hunchha?",
+        text: "Namaste bro! 🙏 Chat reset भयो। Normal kura garna ya kunai bat, shoes, delivery ko barema janna man chha bhane bhandai garnus hai!",
         timestamp: "Just now",
-        badge: "LIVE SYNC",
+        badge: "LIVE ADVISOR",
         quickActions: [
-          { label: "🏓 Dragon 10 Carbon Rate", query: "What is the rate of Dragon 10?" },
-          { label: "⚡ Dragon 8 Attack Rate", query: "Tell me about Dragon 8 Pro rate" },
-          { label: "👟 Swift Court Shoes", query: "Show me court shoes rate and details" },
-          { label: "💰 Rackets under NPR 2,500", query: "Rackets under NPR 2500" },
+          { label: "👋 K chha bro?", query: "k chha bro" },
+          { label: "🏓 Dragon 10 Rate", query: "What is the rate of Dragon 10?" },
+          { label: "⚡ Dragon 8 Attack", query: "Tell me about Dragon 8 Pro rate" },
+          { label: "👟 Court Shoes", query: "Show me court shoes rate and details" },
+          { label: "💰 Under NPR 2,500", query: "Rackets under NPR 2500" },
           { label: "🚚 Delivery Charges", query: "What are the delivery charges?" },
-          { label: "🎟️ Any Active Coupons?", query: "Any active coupon codes?" },
         ],
       },
     ]);
   };
 
-  // Process User Query based on Live Admin Rates
+  // Process User Query based on Live Admin Rates & Natural Chit-Chat
   const handleSendMessage = (textToSend?: string) => {
     const query = (textToSend || inputMessage).trim();
     if (!query) return;
@@ -164,7 +165,7 @@ function LokiAIAgentContent() {
       setMessages((prev) => [...prev, response]);
       setIsTyping(false);
       playSoftChime();
-    }, 400);
+    }, 380);
   };
 
   const handleAddToCart = (product: Product) => {
@@ -197,7 +198,7 @@ function LokiAIAgentContent() {
             className="hidden sm:flex items-center gap-2 px-3.5 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-2xl border border-slate-800 animate-in fade-in slide-in-from-right-4 duration-300 transition"
           >
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Ask AI Rates &amp; Gear</span>
+            <span>Chat &amp; Ask Rates</span>
           </button>
         )}
 
@@ -228,12 +229,12 @@ function LokiAIAgentContent() {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-black text-sm tracking-tight text-white">LOKI Rate Advisor</h3>
+                  <h3 className="font-black text-sm tracking-tight text-white">LOKI AI Advisor</h3>
                   <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                     LIVE SYNC
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-400 font-medium">Official ITTF Rates &amp; Warehouse Stock</p>
+                <p className="text-[10px] text-slate-400 font-medium">Talk normally or ask live store rates</p>
               </div>
             </div>
 
@@ -260,6 +261,12 @@ function LokiAIAgentContent() {
           {/* Quick Rate Prompt Pills Bar */}
           <div className="p-2.5 bg-slate-50 border-b border-slate-200/80 flex items-center gap-1.5 overflow-x-auto scrollbar-none">
             <button
+              onClick={() => handleQuickPrompt("k chha bro")}
+              className="px-2.5 py-1 rounded-full bg-white hover:bg-slate-200 border border-slate-200 text-[11px] font-semibold text-slate-700 whitespace-nowrap transition"
+            >
+              👋 K chha bro?
+            </button>
+            <button
               onClick={() => handleQuickPrompt("What is the rate of Dragon 10?")}
               className="px-2.5 py-1 rounded-full bg-white hover:bg-slate-200 border border-slate-200 text-[11px] font-semibold text-slate-700 whitespace-nowrap transition"
             >
@@ -282,12 +289,6 @@ function LokiAIAgentContent() {
               className="px-2.5 py-1 rounded-full bg-white hover:bg-slate-200 border border-slate-200 text-[11px] font-semibold text-slate-700 whitespace-nowrap transition"
             >
               🚚 Delivery Rates?
-            </button>
-            <button
-              onClick={() => handleQuickPrompt("Any active coupon codes?")}
-              className="px-2.5 py-1 rounded-full bg-white hover:bg-slate-200 border border-slate-200 text-[11px] font-semibold text-slate-700 whitespace-nowrap transition"
-            >
-              🎟️ Coupons?
             </button>
           </div>
 
@@ -456,7 +457,7 @@ function LokiAIAgentContent() {
             >
               <input
                 type="text"
-                placeholder="Ask in Nepali or English (e.g. Dragon 10 ko rate, delivery fee, bat under 2500)..."
+                placeholder="Talk normally in Nepali or English (e.g. kasto xa bro, Dragon 10 ko rate, bat under 2500)..."
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-red-500"
@@ -478,7 +479,7 @@ function LokiAIAgentContent() {
 }
 
 // ========================================================
-// REAL-TIME RATE & NLP GROUNDING ENGINE
+// REAL-TIME RATE & NATURAL CONVERSATIONAL NLP ENGINE
 // ========================================================
 function generateRateGroundedResponse(
   query: string,
@@ -486,94 +487,265 @@ function generateRateGroundedResponse(
   settings: ReturnType<typeof useAdminStore.getState>["storeSettings"],
   coupons: ReturnType<typeof useAdminStore.getState>["coupons"]
 ): ChatMessage {
-  const lower = query.toLowerCase().trim();
+  const rawLower = query.toLowerCase().trim();
+  // Strip special characters for fuzzy matching
+  const clean = rawLower
+    .replace(/[\?\,\.\!\@\#\$\%\^\&\*\(\)\_\+\-\=\[\]\{\}\;\:\'\"\\\|\<\>\/]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 
   // Helper: Find in-stock items
   const inStockProducts = products.filter((p) => p.inStock && p.stockCount > 0);
 
-  // --------------------------------------------------------
-  // 1. CASUAL GREETINGS & NORMAL CONVERSATION (Nepali / English)
-  // --------------------------------------------------------
-  const isGreeting =
-    /^(hi|hello|hey|hiya|yo|namaste|namaskar|hola|greetings)/i.test(lower) ||
-    lower.includes("k chha") ||
-    lower.includes("k cha") ||
-    lower.includes("kasto chha") ||
-    lower.includes("kasto cha") ||
-    lower.includes("sanchai") ||
-    lower.includes("sanchai chhau") ||
-    lower.includes("k gardai") ||
-    lower.includes("timi ko hau") ||
-    lower.includes("who are you") ||
-    lower.includes("what are you") ||
-    lower.includes("what can you do") ||
-    lower.includes("k garna sakchhau") ||
-    lower.includes("dai") ||
-    lower.includes("bro") ||
-    lower.includes("daju") ||
-    lower.includes("bhai") ||
-    lower.includes("namaste") ||
-    lower.includes("namaskar") ||
-    lower.includes("नमस्ते") ||
-    lower.includes("नमस्कार");
+  // Helper matching functions
+  const has = (re: RegExp) => re.test(clean) || re.test(rawLower);
 
-  // Check if it's purely social/introductory without asking for a specific item
-  const hasSpecificProductQuery =
-    lower.includes("dragon") ||
-    lower.includes("shoe") ||
-    lower.includes("jutta") ||
-    lower.includes("jersey") ||
-    lower.includes("racket") ||
-    lower.includes("bat") ||
-    lower.includes("ball") ||
-    lower.includes("rubber") ||
-    lower.includes("case") ||
-    lower.includes("price") ||
-    lower.includes("rate") ||
-    lower.includes("kati") ||
-    lower.includes("paucha") ||
-    lower.includes("butterfly") ||
-    lower.includes("delivery") ||
-    lower.includes("coupon");
-
-  if (isGreeting && !hasSpecificProductQuery) {
+  // --------------------------------------------------------
+  // 1. "SUNA NA" / "SUNANA" / "BANA NA" / ATTENTION OPENERS
+  // (e.g. "suna na bro", "sunana", "bana na dai", "oi bro")
+  // --------------------------------------------------------
+  if (
+    has(/^(suna\s*na|sunana|bana\s*na|vanana|bhana\s*na|suna\s*bana|suna|sunnus|bhandinus|vandinus)\b/i) ||
+    has(/^(oi|oye|hey\s*bro|oi\s*bro|dai\s*suna|daju\s*suna)\b/i)
+  ) {
     return {
       id: `ai-${Date.now()}`,
       sender: "ai",
-      text: `Namaste sathi! 🙏 Everything is going great here in the table tennis arena!\n\nMa LOKI Zone Nepal ko official AI Equipment & Rate Advisor hu. Tapaiko table tennis journey lai next-level championship ma puryauna ma store admin le add/update gareko **real-time live rates**, warehouse stock availability, ra playstyle recommendations provide garchhu.\n\n🏓 **Tapaiko game style kasto chha?**\n• Attacking topspin rallies & smashes khelnu hunchha?\n• Ki defensive controlled placement & counter-blocking?\n\nTapaiko requirement bhannus, ma exact matching bat ra live price recommend garchhu!`,
+      text: `Hajur bro! 🙏 Bhandai garnus, ma dhyan diyera sunirakheko chhu.\n\nTapaiko table tennis game ko barema, kunai specific bat (Dragon 10, Dragon 8), court shoes, delivery, ya discount coupons ko barema k sodhnu thyo?`,
       timestamp: "Just now",
-      badge: "COACH ADVISOR",
-      recommendedProducts: inStockProducts.slice(0, 2),
+      badge: "LISTENING",
       quickActions: [
-        { label: "🏓 Dragon 10 Carbon Rate", query: "What is the rate of Dragon 10?" },
-        { label: "⚡ Dragon 8 Attack Rate", query: "Tell me about Dragon 8 Pro rate" },
-        { label: "👟 Swift Court Shoes", query: "Show me court shoes rate and details" },
-        { label: "💰 Rackets under NPR 2,500", query: "Rackets under NPR 2500" },
-        { label: "🚚 Delivery Charges", query: "What are the delivery charges?" },
-        { label: "🎟️ Any Active Coupons?", query: "Any active coupon codes?" },
+        { label: "🏓 Dragon 10 Carbon Rate", query: "Dragon 10 ko rate kati ho?" },
+        { label: "⚡ Dragon 8 Attack Rate", query: "Dragon 8 Pro ko rate kasto chha?" },
+        { label: "👟 Swift Court Shoes", query: "Show me court shoes rate" },
+        { label: "🚚 Delivery Charges", query: "Delivery charges kati ho?" },
+        { label: "🎟️ Active Coupons", query: "Any active coupon codes?" },
       ],
     };
   }
 
   // --------------------------------------------------------
-  // 2. SHOWROOM / LOCATION & STORE CONTACT INQUIRY
+  // 2. GREETINGS & CASUAL "HOW ARE YOU" (Supports 'x' and 'ch' spellings!)
+  // (e.g. "k chha bro", "k xa", "kasto xa", "sanchai", "hello", "namaste")
   // --------------------------------------------------------
   if (
-    lower.includes("pasal kata") ||
-    lower.includes("showroom") ||
-    lower.includes("location") ||
-    lower.includes("store kata") ||
-    lower.includes("kaha chha") ||
-    lower.includes("kaha cha") ||
-    lower.includes("kata chha") ||
-    lower.includes("kata cha") ||
-    lower.includes("address") ||
-    lower.includes("thamel") ||
-    lower.includes("contact") ||
-    lower.includes("phone") ||
-    lower.includes("whatsapp") ||
-    lower.includes("number") ||
-    lower.includes("call")
+    has(/\b(namaste|namaskar|नमस्ते|नमस्कार)\b/i) ||
+    has(/\b(hi|hello|hey|yo|hiya|hola)\b/i) ||
+    has(/\bk\s*(chha|cha|xa|xau|chhau|chaldai)\b/i) ||
+    has(/\bkasto\s*(chha|cha|xa|xau|chhau)\b/i) ||
+    has(/\b(sanchai|sanchai\s*xau|sanchai\s*chhau|sanchai\s*hunuhunchha)\b/i) ||
+    has(/\b(halka|khabar)\s*k\s*(chha|cha|xa)\b/i) ||
+    has(/\bgood\s*(morning|afternoon|evening)\b/i)
+  ) {
+    return {
+      id: `ai-${Date.now()}`,
+      sender: "ai",
+      text: `Namaste bro! 🙏 Ekdam majja chha yeta, table tennis ko nayanaya ITTF bats ra competition balls pack gari raheko chhu!\n\nTapaiko kasto chaldai chha? Aaja TT khelne mood ma ho ki naya equipment explore garne sochnu bhayeko chha?\n\n🏓 **Tapaiko game kasto chha?** Attacking topspin rallies khelnu hunchha ki controlled defense?`,
+      timestamp: "Just now",
+      badge: "FRIENDLY COACH",
+      recommendedProducts: inStockProducts.slice(0, 2),
+      quickActions: [
+        { label: "🏓 Dragon 10 Carbon Rate", query: "Dragon 10 ko rate kati ho?" },
+        { label: "⚡ Dragon 8 Attack Rate", query: "Dragon 8 Pro ko rate kasto chha?" },
+        { label: "👟 Swift Court Shoes", query: "Show me court shoes rate" },
+        { label: "💰 Rackets under NPR 2,500", query: "Rackets under NPR 2500" },
+        { label: "🚚 Delivery Charges", query: "Delivery charges kati ho?" },
+      ],
+    };
+  }
+
+  // --------------------------------------------------------
+  // 3. CASUAL PERSONAL BANTER: "KHANA KHAYAU" / "K GARDAI XAU" / "KATA XAU"
+  // --------------------------------------------------------
+  if (has(/\b(khana\s*(khayau|khayo|khayeu|khanu\s*bhayou|khanu\s*bhayo|khaye))\b/i)) {
+    return {
+      id: `ai-${Date.now()}`,
+      sender: "ai",
+      text: `Haha ma ta AI assistant hu bro! Khana ta bijuli ra data matra khanchhu 😄⚡\n\nTara tapailai best table tennis equipment, factory rates, ra fast delivery dilauna ma 24/7 ready chhu! Tapaile chai khana khanu bhayo ni? TT practice kasto hudai chha aaja?`,
+      timestamp: "Just now",
+      badge: "CASUAL CHIT-CHAT",
+      quickActions: [
+        { label: "🏓 Check Dragon 10 Rate", query: "Dragon 10 ko rate kati ho?" },
+        { label: "⚡ Check Dragon 8 Attack", query: "Dragon 8 Pro ko rate kasto chha?" },
+        { label: "👟 Swift Court Shoes", query: "Show me court shoes rate" },
+      ],
+    };
+  }
+
+  if (has(/\b(k\s*gardai\s*(xau|chhau|ho|hunuhunchha|hunuhunxa)|what\s*are\s*you\s*doing)\b/i)) {
+    return {
+      id: `ai-${Date.now()}`,
+      sender: "ai",
+      text: `Kathmandu central warehouse ma basera live table tennis orders ra Dragon series blades ko inventory herdai chhu bro! 📦🏓\n\nTapaiko aaja TT practice bhayo ki nai? Naya bat, rubber sheet ya shoes khojirahanu bhayeko chha?`,
+      timestamp: "Just now",
+      badge: "STORE DESK",
+      quickActions: [
+        { label: "🏓 Dragon 10 Carbon Rate", query: "Dragon 10 ko rate kati ho?" },
+        { label: "👟 Swift Court Shoes", query: "Show me court shoes rate" },
+        { label: "🚚 Delivery Charges", query: "Delivery charges kati ho?" },
+      ],
+    };
+  }
+
+  if (has(/\b((kata|kaha)\s*(xau|chhau|basxau|baschhau|ho|hunuhunchha)|ghar\s*kata\s*(ho|cha|xa))\b/i)) {
+    return {
+      id: `ai-${Date.now()}`,
+      sender: "ai",
+      text: `Hamro main showroom ra distribution center Kathmandu, Nepal ma chha bro! 📍\n\nYatai bata Kathmandu Valley bhari 24 hours ma ra Pokhara, Chitwan, Butwal, Biratnagar, Dharan samet sabai 77 districts ma express courier deliver garchhau.\n\nTapai kata bata bolirahanu bhayeko chha? Tapaiko city ma deliver garna milchha!`,
+      timestamp: "Just now",
+      badge: "KATHMANDU HUB",
+      quickActions: [
+        { label: "🚚 Delivery Charges", query: "Delivery charges kati ho?" },
+        { label: "💳 Payment Methods", query: "Kasari payment garne?" },
+        { label: "🏓 Best Rackets", query: "Dragon 10 ko rate kati ho?" },
+      ],
+    };
+  }
+
+  // --------------------------------------------------------
+  // 4. "NEPALI BUJHXAU" / "NEPALI BOLNA AAUXA" (Language Check)
+  // --------------------------------------------------------
+  if (
+    has(/\b(nepali\s*(bolxau|bujhxau|aauxa|bolchhau|bujhchhau|aaucha|bolna\s*aauxa))\b/i) ||
+    has(/\b(can\s*you\s*speak\s*nepali|nepali\s*language|nepali\s*aunchha)\b/i)
+  ) {
+    return {
+      id: `ai-${Date.now()}`,
+      sender: "ai",
+      text: `Ekdam majjale bujhchhu ni bro! 🙏\n\nNepali, English, ya Romanized Nepali (jasari tapailai sajilo lagchha) tyasari nai kura garna saknu hunchha.\n\nTable tennis bats, rubbers, balls, jutta, rates, delivery — tapailai k kura ma help chahiyeko chha?`,
+      timestamp: "Just now",
+      badge: "BILINGUAL READY",
+      quickActions: [
+        { label: "🏓 Dragon 10 Carbon Rate", query: "Dragon 10 ko rate kati ho?" },
+        { label: "⚡ Dragon 8 Attack Rate", query: "Dragon 8 Pro ko rate kasto chha?" },
+        { label: "👟 Swift Court Shoes", query: "Show me court shoes rate" },
+      ],
+    };
+  }
+
+  // --------------------------------------------------------
+  // 5. "TIMI MANXE HO KI BOT?" / "TIMI KO HAU?" / BOT IDENTITY
+  // --------------------------------------------------------
+  if (
+    has(/\b((manxe|manche|human)\s*(ho\s*ki|ho)?\s*(bot|robot|ai))\b/i) ||
+    has(/\b((timi|tapai)\s*(ko\s*hau|ko\s*ho|k\s*hau|k\s*ho))\b/i) ||
+    has(/\b(who\s*are\s*you|what\s*are\s*you)\b/i) ||
+    has(/\btimro\s*(nam|name)\s*k\s*ho\b/i) ||
+    has(/\b(k\s*help|k\s*garna|k\s*garchhau|k\s*garchau)\s*(sakxau|sakchhau|milxa|milchha)\b/i)
+  ) {
+    return {
+      id: `ai-${Date.now()}`,
+      sender: "ai",
+      text: `Ma LOKI Zone Nepal ko official AI Table Tennis Advisor hu 🤖🏓 — Coach jastai friendly ra genuine!\n\nStore admin le Supabase ma products ko rate, stock ya discounts update garna saath malai real-time thaha hunchha. Ma tapailai:\n• Real-time equipment rates & MRP\n• Playstyle recommendations (Attacking loop vs Defensive control)\n• Warehouse stock availability\n• Valley & Outside Valley delivery charges\n• Active discount coupons\n\nsabai kura ma 1-second mai accurate help dinchhu! Tapaiko kasto requirement chha?`,
+      timestamp: "Just now",
+      badge: "AI ADVISOR",
+      quickActions: [
+        { label: "🏓 Check Dragon 10 Rate", query: "Dragon 10 ko rate kati ho?" },
+        { label: "⚡ Check Dragon 8 Attack", query: "Dragon 8 Pro ko rate kasto chha?" },
+        { label: "💰 Rackets under NPR 2,500", query: "Rackets under NPR 2500" },
+      ],
+    };
+  }
+
+  // --------------------------------------------------------
+  // 6. SHORT AGREEMENTS: "THIK XA" / "OK" / "HUSS" / "LA"
+  // --------------------------------------------------------
+  if (
+    has(/^(thik\s*(xa|cha|chha)|ok|okay|huss|la|hunchha|hunxa|sahi\s*ho|bujhe|ekdam\s*ramro|great|perfect|nice)$/i)
+  ) {
+    return {
+      id: `ai-${Date.now()}`,
+      sender: "ai",
+      text: `Huss bro! Kunai pani bela gear upgrade garna man bhaye ya query bhaye bhandai garnus hai.\n\nAttacking offensive loop ko lagi **LOKI Dragon 10 Carbon** (NPR 2,499) ra **Dragon 8 Pro** (NPR 2,199) ahile warehouse ma ready in-stock chhan. Tapailai kunai item check garnu parla?`,
+      timestamp: "Just now",
+      badge: "COACH READY",
+      recommendedProducts: inStockProducts.slice(0, 2),
+      quickActions: [
+        { label: "🏓 Dragon 10 Carbon Rate", query: "Dragon 10 ko rate kati ho?" },
+        { label: "⚡ Dragon 8 Attack Rate", query: "Dragon 8 Pro ko rate kasto chha?" },
+        { label: "👟 Swift Court Shoes", query: "Show me court shoes rate" },
+      ],
+    };
+  }
+
+  // --------------------------------------------------------
+  // 7. GRATITUDE: "DHANYABAD" / "THANK YOU" / "DAMMI"
+  // --------------------------------------------------------
+  if (has(/\b(dhanyabad|dhanyabhad|thank\s*you|thanks|thank\s*u|dherai\s*ramro|good\s*job|welldone|dammi)\b/i)) {
+    return {
+      id: `ai-${Date.now()}`,
+      sender: "ai",
+      text: `Swagatam bro! 🙏 Tapailai help garna pauda ekdam khusi lagyo.\n\nTable tennis court ma aggressive topspin smashes handai garnus! Aru khei sodhnu pare malai bhannu hola hai — enjoy your game! 🏓🔥`,
+      timestamp: "Just now",
+      badge: "ALWAYS WELCOME",
+      quickActions: [
+        { label: "🏓 Shop Rackets", query: "Dragon 10 ko rate kati ho?" },
+        { label: "🚚 Check Delivery Rates", query: "Delivery charges kati ho?" },
+      ],
+    };
+  }
+
+  // --------------------------------------------------------
+  // 8. LAUGHS: "HAHA" / "LOL" / "HEHE"
+  // --------------------------------------------------------
+  if (has(/^(haha|hahaha|hehe|lol|rofl|xd)+$/i)) {
+    return {
+      id: `ai-${Date.now()}`,
+      sender: "ai",
+      text: `Haha table tennis court ma jastai yeta pani full positive vibe chha! 😄\n\nTapai match ma fast offensive attack khelna ruchaunu hunchha ki smooth placement & defense? Aaja kunai gear check garne plan chha?`,
+      timestamp: "Just now",
+      badge: "POSITIVE VIBES",
+      quickActions: [
+        { label: "🏓 Dragon 10 Carbon", query: "Dragon 10 ko rate kati ho?" },
+        { label: "⚡ Dragon 8 Attack", query: "Dragon 8 Pro ko rate kasto chha?" },
+      ],
+    };
+  }
+
+  // --------------------------------------------------------
+  // 9. SIGN-OFF: "BYE" / "GOOD NIGHT" / "PAXI KURA GARUMLA"
+  // --------------------------------------------------------
+  if (has(/\b(bye|tata|good\s*night|shuva\s*ratri|paxi\s*kura|bholi\s*kura|see\s*you|bhetumla)\b/i)) {
+    return {
+      id: `ai-${Date.now()}`,
+      sender: "ai",
+      text: `Huss sathi! Shuva ratri / Tata! 🙏\n\nRamrari khelnus, practice dhuwadhaar garnus. Kunai pani bela ITTF approved pro-gear chahida LOKI Zone Nepal ma samjhinu hola! 🏓`,
+      timestamp: "Just now",
+      badge: "GOODBYE",
+      quickActions: [
+        { label: "🏓 Explore Catalog", query: "What products do you have?" },
+      ],
+    };
+  }
+
+  // --------------------------------------------------------
+  // 10. CATALOG OVERVIEW: "K K PAUCHA" / "WHAT PRODUCTS"
+  // --------------------------------------------------------
+  if (
+    has(/\bk\s*k\s*(paucha|pauxa|bechxau|bechchau|rakheko|chha|cha|xa)\b/i) ||
+    has(/\b(what\s*do\s*you\s*sell|what\s*products|all\s*products|catalog|collection)\b/i)
+  ) {
+    return {
+      id: `ai-${Date.now()}`,
+      sender: "ai",
+      text: `🏓 **Hamro LOKI Zone Nepal Official Catalog:**\n\n1. **Championship Rackets:** LOKI Dragon 10 Carbon (NPR 2,499) ra Dragon 8 Pro (NPR 2,199)\n2. **Pro Footwear:** LOKI Swift Court Shoes (NPR 3,499) with anti-slip gum sole\n3. **Tournament Rubbers:** LOKI RXTON 3 High-Tension Sticky Rubber (NPR 1,499)\n4. **Official Match Balls:** LOKI 3-Star ITTF 40+ Competition Balls (Pack of 6, NPR 299)\n5. **Accessories & Apparel:** Hard-Shell Case (NPR 499), Aeroflex Jersey (NPR 1,799), Pro Shorts (NPR 1,199)\n\nSabai items ready-to-ship stock ma chhan! Tapai kun category explore garna chahanu hunchha?`,
+      timestamp: "Just now",
+      badge: "STORE CATALOG",
+      recommendedProducts: inStockProducts.slice(0, 3),
+      quickActions: [
+        { label: "🏓 Dragon 10 Carbon", query: "Dragon 10 ko rate kati ho?" },
+        { label: "👟 Swift Court Shoes", query: "Show me court shoes rate" },
+        { label: "⚪ 3-Star Balls", query: "Tell me about 3 star balls" },
+        { label: "🚚 Delivery Rates", query: "Delivery charges kati ho?" },
+      ],
+    };
+  }
+
+  // --------------------------------------------------------
+  // 11. SHOWROOM / LOCATION & STORE CONTACT
+  // --------------------------------------------------------
+  if (
+    has(/\b(pasal\s*kata|showroom|location|store\s*kata|address|thamel|kathmandu|contact|phone|whatsapp|number|call)\b/i)
   ) {
     return {
       id: `ai-${Date.now()}`,
@@ -582,27 +754,18 @@ function generateRateGroundedResponse(
       timestamp: "Just now",
       badge: "STORE LOCATION",
       quickActions: [
-        { label: "🚚 Check Delivery Rates", query: "What are the delivery charges?" },
+        { label: "🚚 Check Delivery Rates", query: "Delivery charges kati ho?" },
         { label: "💳 Payment Methods", query: "Kasari payment garne?" },
-        { label: "🏓 Check Dragon 10", query: "What is the rate of Dragon 10?" },
+        { label: "🏓 Check Dragon 10", query: "Dragon 10 ko rate kati ho?" },
       ],
     };
   }
 
   // --------------------------------------------------------
-  // 3. AUTHENTICITY, ITTF GUARANTEE & WARRANTY
+  // 12. AUTHENTICITY, ITTF GUARANTEE & WARRANTY
   // --------------------------------------------------------
   if (
-    lower.includes("genuine") ||
-    lower.includes("original") ||
-    lower.includes("nakali") ||
-    lower.includes("copy") ||
-    lower.includes("fake") ||
-    lower.includes("ittf") ||
-    lower.includes("warranty") ||
-    lower.includes("guarantee") ||
-    lower.includes("bharosa") ||
-    lower.includes("authentic")
+    has(/\b(genuine|original|nakali|copy|duplicate|fake|ittf|warranty|guarantee|bharosa|authentic)\b/i)
   ) {
     return {
       id: `ai-${Date.now()}`,
@@ -612,7 +775,7 @@ function generateRateGroundedResponse(
       badge: "ITTF CERTIFIED",
       recommendedProducts: inStockProducts.filter((p) => p.category === "Rackets" || p.category === "Balls").slice(0, 2),
       quickActions: [
-        { label: "🏓 View ITTF Rackets", query: "What is the rate of Dragon 10?" },
+        { label: "🏓 View ITTF Rackets", query: "Dragon 10 ko rate kati ho?" },
         { label: "⚪ 3-Star ITTF Balls", query: "Tell me about 3 star balls" },
         { label: "🎟️ Check Active Coupons", query: "Any active coupon codes?" },
       ],
@@ -620,20 +783,10 @@ function generateRateGroundedResponse(
   }
 
   // --------------------------------------------------------
-  // 4. PAYMENT METHODS & CASH ON DELIVERY (COD)
+  // 13. PAYMENT METHODS & CASH ON DELIVERY (COD)
   // --------------------------------------------------------
   if (
-    lower.includes("payment") ||
-    lower.includes("kasari tirne") ||
-    lower.includes("pay") ||
-    lower.includes("esewa") ||
-    lower.includes("khalti") ||
-    lower.includes("fonepay") ||
-    lower.includes("qr") ||
-    lower.includes("cod") ||
-    lower.includes("cash on delivery") ||
-    lower.includes("online pay") ||
-    lower.includes("paisa")
+    has(/\b(payment|kasari\s*tirne|pay|esewa|khalti|fonepay|qr|cod|cash\s*on\s*delivery|online\s*pay|paisa)\b/i)
   ) {
     return {
       id: `ai-${Date.now()}`,
@@ -642,32 +795,18 @@ function generateRateGroundedResponse(
       timestamp: "Just now",
       badge: "PAYMENT SUPPORT",
       quickActions: [
-        { label: "🚚 Check Delivery Rates", query: "What are the delivery charges?" },
-        { label: "🏓 Dragon 10 Rate", query: "What is the rate of Dragon 10?" },
+        { label: "🚚 Check Delivery Rates", query: "Delivery charges kati ho?" },
+        { label: "🏓 Dragon 10 Rate", query: "Dragon 10 ko rate kati ho?" },
         { label: "🎟️ Active Coupons", query: "Any active coupon codes?" },
       ],
     };
   }
 
   // --------------------------------------------------------
-  // 5. DELIVERY RATES & FREE SHIPPING THRESHOLD
+  // 14. DELIVERY RATES & FREE SHIPPING THRESHOLD
   // --------------------------------------------------------
   if (
-    lower.includes("delivery") ||
-    lower.includes("shipping") ||
-    lower.includes("charge") ||
-    lower.includes("courier") ||
-    lower.includes("bhada") ||
-    lower.includes("pokhara") ||
-    lower.includes("chitwan") ||
-    lower.includes("butwal") ||
-    lower.includes("dharan") ||
-    lower.includes("biratnagar") ||
-    lower.includes("nepalgunj") ||
-    lower.includes("bhaktapur") ||
-    lower.includes("lalitpur") ||
-    lower.includes("ktm") ||
-    lower.includes("valley")
+    has(/\b(delivery|shipping|charge|courier|bhada|pokhara|chitwan|butwal|dharan|biratnagar|nepalgunj|bhaktapur|lalitpur|ktm|valley)\b/i)
   ) {
     return {
       id: `ai-${Date.now()}`,
@@ -677,24 +816,16 @@ function generateRateGroundedResponse(
       badge: "DELIVERY RATES",
       quickActions: [
         { label: "🔥 Free Delivery Gear", query: "Show me products above 2000 for free delivery" },
-        { label: "🏓 Dragon 10 Carbon Rate", query: "What is the rate of Dragon 10?" },
+        { label: "🏓 Dragon 10 Carbon Rate", query: "Dragon 10 ko rate kati ho?" },
         { label: "🎟️ Active Coupons", query: "Any active coupon codes?" },
       ],
     };
   }
 
   // --------------------------------------------------------
-  // 6. ACTIVE COUPONS & PROMO CODES
+  // 15. ACTIVE COUPONS & PROMO CODES
   // --------------------------------------------------------
-  if (
-    lower.includes("coupon") ||
-    lower.includes("discount") ||
-    lower.includes("promo") ||
-    lower.includes("offer") ||
-    lower.includes("code") ||
-    lower.includes("voucher") ||
-    lower.includes("chhut")
-  ) {
+  if (has(/\b(coupon|discount|promo|offer|code|voucher|chhut)\b/i)) {
     const activeCoupons = coupons.filter((c) => c.active);
     if (activeCoupons.length === 0) {
       return {
@@ -704,7 +835,7 @@ function generateRateGroundedResponse(
         timestamp: "Just now",
         badge: "DISCOUNTS APPLIED",
         quickActions: [
-          { label: "🏓 View Best Sellers", query: "What is the rate of Dragon 10?" },
+          { label: "🏓 View Best Sellers", query: "Dragon 10 ko rate kati ho?" },
           { label: "👟 Court Shoes", query: "Show me court shoes rate" },
         ],
       };
@@ -726,15 +857,16 @@ function generateRateGroundedResponse(
       timestamp: "Just now",
       badge: "ACTIVE COUPONS",
       quickActions: [
-        { label: "🏓 Shop Dragon 10", query: "What is the rate of Dragon 10?" },
-        { label: "⚡ Shop Dragon 8 Pro", query: "Tell me about Dragon 8 Pro rate" },
+        { label: "🏓 Shop Dragon 10", query: "Dragon 10 ko rate kati ho?" },
+        { label: "⚡ Shop Dragon 8 Pro", query: "Dragon 8 Pro ko rate kasto chha?" },
         { label: "👟 View Court Shoes", query: "Show me court shoes rate" },
       ],
     };
   }
 
   // --------------------------------------------------------
-  // 7. COMPETITOR BRANDS / EXTERNAL GEAR DETECTION (Butterfly, Viscaria, Timo Boll, DHS, Stiga, Yasaka, Donic, Mizuno, Asics)
+  // 16. COMPETITOR BRANDS / EXTERNAL GEAR DETECTION
+  // (Butterfly, Viscaria, Timo Boll, DHS, Hurricane, Stiga, Yasaka, Donic, Mizuno, Asics)
   // Requirement: "yedi tesle out of sodhyo bhane tesle not found pani dela ra tyo jastai aaru product haru dekhaulan hai"
   // --------------------------------------------------------
   const competitorKeywords = [
@@ -772,36 +904,36 @@ function generateRateGroundedResponse(
     "joola",
   ];
 
-  const matchedCompetitor = competitorKeywords.find((k) => lower.includes(k));
+  const matchedCompetitor = competitorKeywords.find((k) => rawLower.includes(k));
 
   if (matchedCompetitor) {
     let competitorCategory: "blade" | "rubber" | "shoes" | "general" = "general";
     if (
-      lower.includes("viscaria") ||
-      lower.includes("timo boll") ||
-      lower.includes("blade") ||
-      lower.includes("bat") ||
-      lower.includes("racket") ||
-      lower.includes("clipper") ||
-      lower.includes("carbonado") ||
-      lower.includes("cybershape") ||
-      lower.includes("primorac") ||
-      lower.includes("zhang jike") ||
-      lower.includes("ma long")
+      rawLower.includes("viscaria") ||
+      rawLower.includes("timo boll") ||
+      rawLower.includes("blade") ||
+      rawLower.includes("bat") ||
+      rawLower.includes("racket") ||
+      rawLower.includes("clipper") ||
+      rawLower.includes("carbonado") ||
+      rawLower.includes("cybershape") ||
+      rawLower.includes("primorac") ||
+      rawLower.includes("zhang jike") ||
+      rawLower.includes("ma long")
     ) {
       competitorCategory = "blade";
     } else if (
-      lower.includes("tenergy") ||
-      lower.includes("dignics") ||
-      lower.includes("hurricane") ||
-      lower.includes("rakza") ||
-      lower.includes("rubber") ||
-      lower.includes("sheet") ||
-      lower.includes("bluefire") ||
-      lower.includes("evolution")
+      rawLower.includes("tenergy") ||
+      rawLower.includes("dignics") ||
+      rawLower.includes("hurricane") ||
+      rawLower.includes("rakza") ||
+      rawLower.includes("rubber") ||
+      rawLower.includes("sheet") ||
+      rawLower.includes("bluefire") ||
+      rawLower.includes("evolution")
     ) {
       competitorCategory = "rubber";
-    } else if (lower.includes("shoe") || lower.includes("mizuno") || lower.includes("asics")) {
+    } else if (rawLower.includes("shoe") || rawLower.includes("mizuno") || rawLower.includes("asics")) {
       competitorCategory = "shoes";
     }
 
@@ -836,18 +968,17 @@ function generateRateGroundedResponse(
       isNotFoundNotice: true,
       recommendedProducts: recs,
       quickActions: [
-        { label: "🏓 Dragon 10 Carbon Rate", query: "What is the rate of Dragon 10?" },
-        { label: "⚡ Dragon 8 Attack Rate", query: "Tell me about Dragon 8 Pro rate" },
+        { label: "🏓 Dragon 10 Carbon Rate", query: "Dragon 10 ko rate kati ho?" },
+        { label: "⚡ Dragon 8 Attack Rate", query: "Dragon 8 Pro ko rate kasto chha?" },
         { label: "🎟️ View Active Coupons", query: "Any active coupon codes?" },
       ],
     };
   }
 
   // --------------------------------------------------------
-  // 8. OUT OF STOCK SPECIFIC QUERIES
-  // (e.g., "what is out of stock", "sakiyeko k k chha")
+  // 17. OUT OF STOCK SPECIFIC QUERIES
   // --------------------------------------------------------
-  if (lower.includes("out of stock") || lower.includes("sakiyeko") || lower.includes("sold out")) {
+  if (has(/\b(out\s*of\s*stock|sakiyeko|sold\s*out)\b/i)) {
     const outOfStockList = products.filter((p) => !p.inStock || p.stockCount <= 0);
 
     if (outOfStockList.length === 0) {
@@ -859,7 +990,7 @@ function generateRateGroundedResponse(
         badge: "ALL IN STOCK",
         recommendedProducts: inStockProducts.slice(0, 3),
         quickActions: [
-          { label: "🏓 Dragon 10 Carbon", query: "What is the rate of Dragon 10?" },
+          { label: "🏓 Dragon 10 Carbon", query: "Dragon 10 ko rate kati ho?" },
           { label: "👟 Swift Court Shoes", query: "Show me court shoes rate" },
           { label: "💰 Rackets under NPR 2,500", query: "Rackets under NPR 2500" },
         ],
@@ -876,14 +1007,14 @@ function generateRateGroundedResponse(
       isOutOfStockNotice: true,
       recommendedProducts: inStockProducts.slice(0, 2),
       quickActions: [
-        { label: "🏓 Dragon 10 Carbon Rate", query: "What is the rate of Dragon 10?" },
-        { label: "⚡ Dragon 8 Attack Rate", query: "Tell me about Dragon 8 Pro rate" },
+        { label: "🏓 Dragon 10 Carbon Rate", query: "Dragon 10 ko rate kati ho?" },
+        { label: "⚡ Dragon 8 Attack Rate", query: "Dragon 8 Pro ko rate kasto chha?" },
       ],
     };
   }
 
   // --------------------------------------------------------
-  // 9. BUDGET / PRICE RANGE INQUIRY (e.g. under 2500, under 2000, 3000 bhitra, sasto bat)
+  // 18. BUDGET / PRICE RANGE INQUIRY (e.g. under 2500, under 2000, 3000 bhitra, sasto bat)
   // --------------------------------------------------------
   const numberMatch =
     query.match(/(?:under|below|less than|sasto|bhitra)\s*(?:npr|rs\.?)?\s*(\d+)/i) ||
@@ -902,7 +1033,7 @@ function generateRateGroundedResponse(
         badge: `BUDGET MATCH (≤ NPR ${budget.toLocaleString()})`,
         recommendedProducts: affordable.slice(0, 3),
         quickActions: [
-          { label: "🚚 Check Delivery Rates", query: "What are the delivery charges?" },
+          { label: "🚚 Check Delivery Rates", query: "Delivery charges kati ho?" },
           { label: "🎟️ Any Active Coupons?", query: "Any active coupon codes?" },
           { label: "🏓 Compare Blades", query: "Dragon 10 vs Dragon 8 comparison" },
         ],
@@ -917,32 +1048,32 @@ function generateRateGroundedResponse(
         badge: "AFFORDABLE GEAR",
         recommendedProducts: cheapest,
         quickActions: [
-          { label: "🏓 Dragon 10 Carbon Rate", query: "What is the rate of Dragon 10?" },
-          { label: "⚡ Dragon 8 Attack Rate", query: "Tell me about Dragon 8 Pro rate" },
+          { label: "🏓 Dragon 10 Carbon Rate", query: "Dragon 10 ko rate kati ho?" },
+          { label: "⚡ Dragon 8 Attack Rate", query: "Dragon 8 Pro ko rate kasto chha?" },
         ],
       };
     }
   }
 
   // --------------------------------------------------------
-  // 10. SPECIFIC PRODUCT RATE & DETAILS INQUIRY
-  // Match products dynamically from useAdminStore (which syncs with DB)
+  // 19. SPECIFIC PRODUCT RATE & DETAILS INQUIRY
+  // Match products dynamically from useAdminStore (synced with DB)
   // Handles: In-Stock vs Out-Of-Stock dynamically!
   // --------------------------------------------------------
   const matchedProduct = products.find((p) => {
     const pName = p.name.toLowerCase();
     const pId = p.id.toLowerCase();
 
-    if (lower.includes(pName) || lower.includes(pId)) return true;
-    if ((lower.includes("dragon 10") || lower.includes("d10")) && pId.includes("dragon-10")) return true;
-    if ((lower.includes("dragon 8") || lower.includes("d8")) && pId.includes("dragon-8")) return true;
-    if ((lower.includes("shoe") || lower.includes("shoes") || lower.includes("jutta") || lower.includes("footwear")) && p.category === "Footwear") return true;
-    if ((lower.includes("jersey") || lower.includes("tshirt") || lower.includes("t-shirt") || lower.includes("aeroflex") || lower.includes("luga")) && p.id.includes("jersey")) return true;
-    if ((lower.includes("short") || lower.includes("shorts") || lower.includes("kattu")) && p.id.includes("shorts")) return true;
-    if ((lower.includes("ball") || lower.includes("balls") || lower.includes("gatti") || lower.includes("3-star")) && p.category === "Balls") return true;
-    if ((lower.includes("case") || lower.includes("cover") || lower.includes("bag") || lower.includes("hardshell")) && p.id.includes("case")) return true;
-    if ((lower.includes("towel") || lower.includes("rumal")) && p.id.includes("towel")) return true;
-    if ((lower.includes("rubber") || lower.includes("rxton") || lower.includes("sheet")) && p.id.includes("rxton")) return true;
+    if (rawLower.includes(pName) || rawLower.includes(pId)) return true;
+    if ((rawLower.includes("dragon 10") || rawLower.includes("d10")) && pId.includes("dragon-10")) return true;
+    if ((rawLower.includes("dragon 8") || rawLower.includes("d8")) && pId.includes("dragon-8")) return true;
+    if ((rawLower.includes("shoe") || rawLower.includes("shoes") || rawLower.includes("jutta") || rawLower.includes("footwear")) && p.category === "Footwear") return true;
+    if ((rawLower.includes("jersey") || rawLower.includes("tshirt") || rawLower.includes("t-shirt") || rawLower.includes("aeroflex") || rawLower.includes("luga")) && p.id.includes("jersey")) return true;
+    if ((rawLower.includes("short") || rawLower.includes("shorts") || rawLower.includes("kattu")) && p.id.includes("shorts")) return true;
+    if ((rawLower.includes("ball") || rawLower.includes("balls") || rawLower.includes("gatti") || rawLower.includes("3-star")) && p.category === "Balls") return true;
+    if ((rawLower.includes("case") || rawLower.includes("cover") || rawLower.includes("bag") || rawLower.includes("hardshell")) && p.id.includes("case")) return true;
+    if ((rawLower.includes("towel") || rawLower.includes("rumal")) && p.id.includes("towel")) return true;
+    if ((rawLower.includes("rubber") || rawLower.includes("rxton") || rawLower.includes("sheet")) && p.id.includes("rxton")) return true;
 
     return false;
   });
@@ -951,10 +1082,8 @@ function generateRateGroundedResponse(
     const p = matchedProduct;
     const isOut = !p.inStock || p.stockCount <= 0;
 
-    // SCENARIO 10A: PRODUCT IS OUT OF STOCK
-    // Requirement: "yedi tesle out of sodhyo bhane tesle not found pani dela ra tyo jastai aaru product haru dekhaulan hai"
+    // SCENARIO 19A: PRODUCT IS OUT OF STOCK
     if (isOut) {
-      // Find similar in-stock products
       const alternatives = inStockProducts.filter((alt) => alt.id !== p.id).slice(0, 2);
 
       return {
@@ -966,14 +1095,14 @@ function generateRateGroundedResponse(
         isOutOfStockNotice: true,
         recommendedProducts: alternatives,
         quickActions: [
-          { label: "🏓 Check Dragon 10 Rate", query: "What is the rate of Dragon 10?" },
-          { label: "⚡ Check Dragon 8 Rate", query: "Tell me about Dragon 8 Pro rate" },
-          { label: "🚚 Check Delivery Charges", query: "What are the delivery charges?" },
+          { label: "🏓 Check Dragon 10 Rate", query: "Dragon 10 ko rate kati ho?" },
+          { label: "⚡ Check Dragon 8 Rate", query: "Dragon 8 Pro ko rate kasto chha?" },
+          { label: "🚚 Check Delivery Charges", query: "Delivery charges kati ho?" },
         ],
       };
     }
 
-    // SCENARIO 10B: PRODUCT IS IN STOCK - GIVE EXACT REAL-TIME RATES & SPECS!
+    // SCENARIO 19B: PRODUCT IS IN STOCK - GIVE EXACT REAL-TIME RATES & SPECS!
     const discountText = p.discountPercent ? ` (${p.discountPercent}% OFF applied!)` : "";
     let specsLine = "";
     if (p.specs) {
@@ -985,7 +1114,6 @@ function generateRateGroundedResponse(
       specsLine = parts.length > 0 ? `\n\n📊 **Performance Specifications:**\n${parts.join("\n")}` : "";
     }
 
-    // Engagement Coach Tip
     let coachTip = "";
     if (p.category === "Rackets") {
       coachTip = `\n\n💡 **Coach Advice:** Racket ko rubber sheet lai dust ra moisture bata bachauna euta **Hard-Shell Case** (NPR 499) ra competition balls sangai lida best protection ra longevity hunchha!`;
@@ -1001,7 +1129,7 @@ function generateRateGroundedResponse(
       badge: "LIVE RATE SYNC",
       recommendedProducts: [p],
       quickActions: [
-        { label: "🚚 Delivery Rates", query: "What are the delivery charges?" },
+        { label: "🚚 Delivery Rates", query: "Delivery charges kati ho?" },
         { label: "🎟️ Any Active Coupons?", query: "Any active coupon codes?" },
         { label: "🏓 Compare with Other Blades", query: "Dragon 10 vs Dragon 8 comparison" },
       ],
@@ -1009,9 +1137,9 @@ function generateRateGroundedResponse(
   }
 
   // --------------------------------------------------------
-  // 11. GENERAL RACKET / BAT / BLADE COMPARISON
+  // 20. GENERAL RACKET / BAT / BLADE COMPARISON & ADVICE
   // --------------------------------------------------------
-  if (lower.includes("racket") || lower.includes("bat") || lower.includes("blade")) {
+  if (has(/\b(racket|bat|blade|blades)\b/i)) {
     const rackets = inStockProducts.filter((p) => p.category === "Rackets");
     return {
       id: `ai-${Date.now()}`,
@@ -1021,58 +1149,57 @@ function generateRateGroundedResponse(
       badge: "RACKET COMPARISON",
       recommendedProducts: rackets.length > 0 ? rackets : inStockProducts.slice(0, 2),
       quickActions: [
-        { label: "🏓 Select Dragon 10 (NPR 2,499)", query: "What is the rate of Dragon 10?" },
-        { label: "⚡ Select Dragon 8 (NPR 2,199)", query: "Tell me about Dragon 8 Pro rate" },
-        { label: "🚚 Delivery Charges", query: "What are the delivery charges?" },
+        { label: "🏓 Select Dragon 10 (NPR 2,499)", query: "Dragon 10 ko rate kati ho?" },
+        { label: "⚡ Select Dragon 8 (NPR 2,199)", query: "Dragon 8 Pro ko rate kasto chha?" },
+        { label: "🚚 Delivery Charges", query: "Delivery charges kati ho?" },
       ],
     };
   }
 
   // --------------------------------------------------------
-  // 12. GENERAL UNKNOWN PRODUCT SEARCH (NOT FOUND IN CATALOG)
-  // Requirement: "ra yedi tesle out of sodhyo bhane tesle not found pani dela ra tyo jastai aaru product haru dekhaulan hai"
+  // 21. EXPLICIT PRODUCT SEARCH THAT RETURNED NO MATCH
+  // CRITICAL: ONLY triggers if user explicitly asked for a product or price!
+  // (Prevents casual sentences like "kasto xa bro" or "bato ma chu" from triggering not found!)
   // --------------------------------------------------------
-  // Check if query looks like a specific product search that was not matched
-  const looksLikeSearch =
-    lower.length > 3 &&
-    !lower.includes("hello") &&
-    !lower.includes("hi") &&
-    !lower.includes("good") &&
-    !lower.includes("help");
+  const hasExplicitBuyOrProductSearch = has(
+    /\b(paucha|pauxa|kinna|kinne|buy|order|price|rate|cost|kati\s*parcha|kati\s*parxa|khojeko|khojdai|cha\s*ki\s*nai|chha\s*ki\s*nai|xa\s*ki\s*nai)\b/i
+  );
 
-  if (looksLikeSearch) {
+  if (hasExplicitBuyOrProductSearch) {
     return {
       id: `ai-${Date.now()}`,
       sender: "ai",
-      text: `🔍 **Item Not Found in Store Catalog:**\n\nTapai le khojnu bhayeko **"${query}"** hamro official catalog ma bhetiyena (Not Found). Hamro store Nepal ma **Official LOKI (ITTF Approved)** brand ko exclusive authorized partner ho.\n\n⭐ **Tara tapailai chahine ustai high-performance gear yaha available chha:**\n• **Championship Rackets:** LOKI Dragon 10 Carbon (NPR 2,499) & Dragon 8 (NPR 2,199)\n• **Pro Court Shoes:** LOKI Swift Court Shoes (NPR 3,499) with anti-slip gum sole\n• **Match Essentials:** LOKI RXTON 3 Rubber (NPR 1,499) & 3-Star ITTF Balls (NPR 299)\n\nTala hamra top-rated available items check garnus:`,
+      text: `🔍 **Item Not Found in Store Catalog:**\n\nTapai le khojnu bhayeko saman hamro official LOKI catalog ma bhetiyena (Not Found). Hamro store Nepal ma **Official LOKI (ITTF Approved)** brand ko exclusive authorized partner ho.\n\n⭐ **Tara tapailai chahine ustai high-performance gear yaha available chha:**\n• **Championship Rackets:** LOKI Dragon 10 Carbon (NPR 2,499) & Dragon 8 (NPR 2,199)\n• **Pro Court Shoes:** LOKI Swift Court Shoes (NPR 3,499) with anti-slip gum sole\n• **Match Essentials:** LOKI RXTON 3 Rubber (NPR 1,499) & 3-Star ITTF Balls (NPR 299)\n\nTala hamra top-rated available items check garnus:`,
       timestamp: "Just now",
       badge: "NOT FOUND - STORE FAVORITES",
       isNotFoundNotice: true,
       recommendedProducts: inStockProducts.slice(0, 2),
       quickActions: [
-        { label: "🏓 Dragon 10 Carbon Rate", query: "What is the rate of Dragon 10?" },
+        { label: "🏓 Dragon 10 Carbon Rate", query: "Dragon 10 ko rate kati ho?" },
         { label: "👟 Swift Court Shoes", query: "Show me court shoes rate" },
-        { label: "🚚 Delivery Rates", query: "What are the delivery charges?" },
+        { label: "🚚 Delivery Rates", query: "Delivery charges kati ho?" },
         { label: "🎟️ Any Active Coupons?", query: "Any active coupon codes?" },
       ],
     };
   }
 
   // --------------------------------------------------------
-  // 13. DEFAULT INTELLIGENT HELPER & ENGAGEMENT HOOK
+  // 22. OPEN-ENDED CONVERSATIONAL FALLBACK (NEVER ACCUSES USER OF FAILED SEARCH!)
+  // Warm, human coach response that keeps the user engaged!
   // --------------------------------------------------------
   return {
     id: `ai-${Date.now()}`,
     sender: "ai",
-    text: `Ma LOKI Zone Nepal ko live store rates sanga dynamically synchronized chhu. Tapaile malai sodhna saknu hunchha:\n\n• *"Dragon 10 ko rate kati ho?"*\n• *"Rackets under NPR 2,500"* \n• *"Butterfly Viscaria pauchha ki nai?"*\n• *"Kathmandu / Pokhara delivery charge kati ho?"*\n• *"Active coupon codes k k chhan?"*\n\nTapai kun gear explore garna chahanu hunchha?`,
+    text: `Hajur bro! Ma bujhchhu 😄 Ma LOKI Zone Nepal ko AI Table Tennis Advisor hu.\n\nTapaile masanga normal guff garna saknu hunchha, table tennis equipment choose garna tips magna saknu hunchha, ya Kathmandu showroom bata live rates & delivery charges sodhna saknu hunchha!\n\n🏓 **Tapaiko table tennis journey kasto chaldai chha?** Regular khelnu hunchha ki naya start garne sochirahanu bhayeko chha?`,
     timestamp: "Just now",
     badge: "COACH ADVISOR",
     recommendedProducts: inStockProducts.slice(0, 2),
     quickActions: [
-      { label: "🏓 Dragon 10 Carbon Rate", query: "What is the rate of Dragon 10?" },
-      { label: "⚡ Dragon 8 Attack Rate", query: "Tell me about Dragon 8 Pro rate" },
+      { label: "🏓 Dragon 10 Carbon Rate", query: "Dragon 10 ko rate kati ho?" },
+      { label: "⚡ Dragon 8 Attack Rate", query: "Dragon 8 Pro ko rate kasto chha?" },
       { label: "👟 Swift Court Shoes", query: "Show me court shoes rate" },
-      { label: "🚚 Delivery Charges", query: "What are the delivery charges?" },
+      { label: "💰 Rackets under NPR 2,500", query: "Rackets under NPR 2500" },
+      { label: "🚚 Delivery Charges", query: "Delivery charges kati ho?" },
     ],
   };
 }
