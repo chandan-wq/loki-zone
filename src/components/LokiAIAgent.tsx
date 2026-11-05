@@ -11,20 +11,10 @@ import {
   Sparkles,
   ShoppingBag,
   Check,
-  ChevronDown,
-  DollarSign,
-  Tag,
-  Truck,
   RotateCcw,
   ExternalLink,
-  Flame,
-  ArrowRight,
-  ShieldCheck,
-  HelpCircle,
-  AlertCircle,
-  Phone,
   Zap,
-  Smile,
+  MessageCircle,
 } from "lucide-react";
 import { useAdminStore } from "@/store/useAdminStore";
 import { useCartStore } from "@/store/useCartStore";
@@ -48,12 +38,13 @@ export interface ChatMessage {
   isNotFoundNotice?: boolean;
 }
 
-// Gentle audio notification chime (Web Audio API, no external audio file required)
+// Gentle audio notification chime (Web Audio API)
 function playSoftChime() {
   if (typeof window === "undefined") return;
   try {
     const AudioContextClass =
-      window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!AudioContextClass) return;
     const ctx = new AudioContextClass();
     const osc = ctx.createOscillator();
@@ -62,11 +53,11 @@ function playSoftChime() {
     osc.frequency.setValueAtTime(784, ctx.currentTime); // G5
     osc.frequency.exponentialRampToValueAtTime(1174.66, ctx.currentTime + 0.1); // D6
     gain.gain.setValueAtTime(0.04, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.22);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.2);
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.start();
-    osc.stop(ctx.currentTime + 0.23);
+    osc.stop(ctx.currentTime + 0.22);
   } catch {
     // Autoplay policy or unsupported audio context
   }
@@ -74,7 +65,6 @@ function playSoftChime() {
 
 function LokiAIAgentContent() {
   const pathname = usePathname();
-  const { products, storeSettings, coupons } = useAdminStore();
   const { addItem } = useCartStore();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -84,17 +74,17 @@ function LokiAIAgentContent() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Initial welcome message with engaging prompt pills
+  // Initial welcome message in friendly, normal Nepali
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "welcome-1",
       sender: "ai",
-      text: "Namaste bro! 🙏 Ma LOKI Zone Nepal ko official AI Coach & Rate Advisor hu.\n\nTapaile masanga normal kura garna saknu hunchha (Nepali / English ma), store ko live bat rates sodhna saknu hunchha, ya delivery ra discounts janna saknu hunchha!\n\nAaja kasto chaldaichha tapaiko table tennis game?",
+      text: "Namaste bro! 🙏 Ma LOKI Nepal ko AI Coach hu.\n\nMasanga normal gaff garna saknu hunchha, bats/shoes ko live rate sodhna saknu hunchha, ya delivery ra offer haru bujhna saknu hunchha. Aaja kasto chaldaichha tapaiko game?",
       timestamp: "Just now",
-      badge: "LIVE ADVISOR",
+      badge: "ONLINE",
       quickActions: [
         { label: "👋 K chha bro?", query: "k chha bro" },
-        { label: "🏓 Dragon 10 Carbon Rate", query: "Dragon 10 ko rate kati ho?" },
+        { label: "🏓 Dragon 10 Rate", query: "Dragon 10 ko rate kati ho?" },
         { label: "⚡ Dragon 8 Attack Rate", query: "Dragon 8 Pro ko rate kasto chha?" },
         { label: "👟 Swift Court Shoes", query: "Show me court shoes rate" },
         { label: "💰 Rackets under NPR 2,500", query: "Rackets under NPR 2500" },
@@ -146,7 +136,7 @@ function LokiAIAgentContent() {
     }
   }, [messages, isOpen]);
 
-  // Hide AI agent on checkout, admin, and confirmation screens to avoid obstructing buttons
+  // Hide AI agent on checkout, admin, and confirmation screens
   if (
     pathname?.startsWith("/checkout") ||
     pathname?.startsWith("/admin") ||
@@ -166,16 +156,16 @@ function LokiAIAgentContent() {
       {
         id: `welcome-${Date.now()}`,
         sender: "ai",
-        text: "Namaste bro! 🙏 Chat reset भयो। Normal kura garna ya kunai bat, shoes, delivery ko barema janna man chha bhane bhandai garnus hai!",
+        text: "Namaste bro! 🙏 Chat fresh भयो। Bat, shoes, delivery ya coupons ko barema janna man chha bhane sodhnus hai!",
         timestamp: "Just now",
-        badge: "LIVE ADVISOR",
+        badge: "ONLINE",
         quickActions: [
           { label: "👋 K chha bro?", query: "k chha bro" },
-          { label: "🏓 Dragon 10 Rate", query: "What is the rate of Dragon 10?" },
-          { label: "⚡ Dragon 8 Attack", query: "Tell me about Dragon 8 Pro rate" },
-          { label: "👟 Court Shoes", query: "Show me court shoes rate and details" },
+          { label: "🏓 Dragon 10 Rate", query: "Dragon 10 ko rate kati ho?" },
+          { label: "⚡ Dragon 8 Attack", query: "Dragon 8 Pro ko rate kasto chha?" },
+          { label: "👟 Court Shoes", query: "Show me court shoes rate" },
           { label: "💰 Under NPR 2,500", query: "Rackets under NPR 2500" },
-          { label: "🚚 Delivery Charges", query: "What are the delivery charges?" },
+          { label: "🚚 Delivery Charges", query: "Delivery charges kati ho?" },
         ],
       },
     ]);
@@ -205,7 +195,7 @@ function LokiAIAgentContent() {
       setMessages((prev) => [...prev, response]);
       setIsTyping(false);
       playSoftChime();
-    }, 380);
+    }, 320);
   };
 
   const handleAddToCart = (product: Product) => {
@@ -228,62 +218,69 @@ function LokiAIAgentContent() {
     <>
       {/* Floating Trigger Button (Bottom Right) */}
       <div
-        className={`fixed right-4 sm:right-6 z-50 flex items-center gap-3 ${
+        className={`fixed right-4 sm:right-6 z-50 flex items-center gap-2.5 ${
           isProductPage ? "bottom-20 sm:bottom-6" : "bottom-6"
         }`}
       >
         {!isOpen && (
           <button
             onClick={() => setIsOpen(true)}
-            className="hidden sm:flex items-center gap-2 px-3.5 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-2xl border border-slate-800 animate-in fade-in slide-in-from-right-4 duration-300 transition"
+            className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-full bg-neutral-900/95 hover:bg-neutral-900 text-white text-xs font-semibold shadow-xl border border-neutral-700/80 backdrop-blur-md animate-in fade-in slide-in-from-right-4 duration-300 transition hover:scale-105 active:scale-95 group"
           >
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Chat &amp; Ask Rates</span>
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+            </span>
+            <span className="tracking-tight">Chat with Coach</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-600 font-bold text-white uppercase tracking-wider">
+              AI
+            </span>
           </button>
         )}
 
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className={`relative p-4 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95 flex items-center justify-center ${
+          className={`relative w-14 h-14 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95 flex items-center justify-center ${
             isOpen
-              ? "bg-slate-900 text-white rotate-90"
-              : "bg-red-600 hover:bg-red-700 text-white ring-4 ring-red-500/20 shadow-red-600/30"
+              ? "bg-neutral-900 text-white rotate-90"
+              : "bg-gradient-to-tr from-red-600 via-red-500 to-rose-600 text-white ring-4 ring-red-500/25 shadow-red-600/40"
           }`}
           aria-label="Open AI Rate Advisor"
         >
-          {isOpen ? <X className="w-6 h-6" /> : <Bot className="w-6 h-6" />}
+          {isOpen ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
           {!isOpen && (
-            <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-400 border-2 border-white rounded-full animate-pulse" />
+            <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 border-2 border-white rounded-full animate-pulse" />
           )}
         </button>
       </div>
 
       {/* Floating Chat Modal Window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-4 sm:right-6 z-50 w-[calc(100vw-32px)] sm:w-[440px] max-h-[660px] h-[82vh] bg-white rounded-3xl border border-slate-200 shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-          {/* Header */}
-          <div className="p-4 bg-slate-950 text-white flex items-center justify-between border-b border-slate-800">
+        <div className="fixed bottom-24 right-4 sm:right-6 z-50 w-[calc(100vw-32px)] sm:w-[420px] max-h-[640px] h-[80vh] bg-slate-50 rounded-[28px] border border-slate-200/90 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.25)] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          {/* Header with Dark Red/Charcoal Gradient */}
+          <div className="px-4 py-3.5 bg-gradient-to-r from-neutral-950 via-slate-900 to-red-950 text-white flex items-center justify-between border-b border-neutral-800">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-red-600 flex items-center justify-center text-white font-black text-sm shadow-md shadow-red-600/40">
+              <div className="relative w-9 h-9 rounded-xl bg-gradient-to-tr from-red-600 to-rose-500 flex items-center justify-center text-white shadow-md shadow-red-600/30">
                 <Bot className="w-5 h-5" />
+                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 border-2 border-neutral-950 rounded-full" />
               </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-black text-sm tracking-tight text-white">LOKI AI Advisor</h3>
-                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                    LIVE SYNC
+                <div className="flex items-center gap-1.5">
+                  <h3 className="font-bold text-sm tracking-tight text-white">LOKI AI Coach</h3>
+                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    Live Rates
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-400 font-medium">Talk normally or ask live store rates</p>
+                <p className="text-[10px] text-slate-300 font-normal">Kathmandu Store • Always Online</p>
               </div>
             </div>
 
             <div className="flex items-center gap-1">
               <button
                 onClick={handleResetChat}
-                title="Restart Conversation"
-                aria-label="Restart Conversation"
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                title="Fresh Chat"
+                aria-label="Fresh Chat"
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition"
               >
                 <RotateCcw className="w-4 h-4" />
               </button>
@@ -291,7 +288,7 @@ function LokiAIAgentContent() {
                 onClick={() => setIsOpen(false)}
                 title="Close"
                 aria-label="Close"
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -299,58 +296,58 @@ function LokiAIAgentContent() {
           </div>
 
           {/* Quick Rate Prompt Pills Bar */}
-          <div className="p-2.5 bg-slate-50 border-b border-slate-200/80 flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+          <div className="p-2.5 bg-white border-b border-slate-200/70 flex items-center gap-1.5 overflow-x-auto scrollbar-none">
             <button
               onClick={() => handleQuickPrompt("k chha bro")}
-              className="px-2.5 py-1 rounded-full bg-white hover:bg-slate-200 border border-slate-200 text-[11px] font-semibold text-slate-700 whitespace-nowrap transition"
+              className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-red-50 hover:text-red-700 hover:border-red-200 border border-slate-200/80 text-[11px] font-medium text-slate-700 whitespace-nowrap transition active:scale-95"
             >
               👋 K chha bro?
             </button>
             <button
-              onClick={() => handleQuickPrompt("What is the rate of Dragon 10?")}
-              className="px-2.5 py-1 rounded-full bg-white hover:bg-slate-200 border border-slate-200 text-[11px] font-semibold text-slate-700 whitespace-nowrap transition"
+              onClick={() => handleQuickPrompt("Dragon 10 ko rate kati ho?")}
+              className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-red-50 hover:text-red-700 hover:border-red-200 border border-slate-200/80 text-[11px] font-medium text-slate-700 whitespace-nowrap transition active:scale-95"
             >
               🏓 Dragon 10 Rate?
             </button>
             <button
               onClick={() => handleQuickPrompt("Rackets under NPR 2500")}
-              className="px-2.5 py-1 rounded-full bg-white hover:bg-slate-200 border border-slate-200 text-[11px] font-semibold text-slate-700 whitespace-nowrap transition"
+              className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-red-50 hover:text-red-700 hover:border-red-200 border border-slate-200/80 text-[11px] font-medium text-slate-700 whitespace-nowrap transition active:scale-95"
             >
               💰 Under 2,500?
             </button>
             <button
               onClick={() => handleQuickPrompt("Do you have Butterfly Viscaria bat?")}
-              className="px-2.5 py-1 rounded-full bg-white hover:bg-slate-200 border border-slate-200 text-[11px] font-semibold text-slate-700 whitespace-nowrap transition"
+              className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-red-50 hover:text-red-700 hover:border-red-200 border border-slate-200/80 text-[11px] font-medium text-slate-700 whitespace-nowrap transition active:scale-95"
             >
-              🦋 Butterfly vs LOKI?
+              🦋 Butterfly vs LOKI
             </button>
             <button
-              onClick={() => handleQuickPrompt("What are the delivery charges?")}
-              className="px-2.5 py-1 rounded-full bg-white hover:bg-slate-200 border border-slate-200 text-[11px] font-semibold text-slate-700 whitespace-nowrap transition"
+              onClick={() => handleQuickPrompt("Delivery charges kati ho?")}
+              className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-red-50 hover:text-red-700 hover:border-red-200 border border-slate-200/80 text-[11px] font-medium text-slate-700 whitespace-nowrap transition active:scale-95"
             >
-              🚚 Delivery Rates?
+              🚚 Delivery Fee
             </button>
           </div>
 
           {/* Chat Messages Body */}
-          <div className="flex-1 p-4 overflow-y-auto space-y-4 text-xs bg-[#f8fafc]">
+          <div className="flex-1 p-3.5 overflow-y-auto space-y-3 bg-[#f8fafc]">
             {messages.map((msg) => (
               <div
                 key={msg.id}
                 className={`flex flex-col ${msg.sender === "user" ? "items-end" : "items-start"}`}
               >
                 <div
-                  className={`max-w-[90%] sm:max-w-[85%] p-3.5 rounded-2xl leading-relaxed ${
+                  className={`max-w-[88%] sm:max-w-[84%] p-3.5 rounded-2xl leading-relaxed text-[13px] ${
                     msg.sender === "user"
-                      ? "bg-slate-900 text-white rounded-br-none shadow-sm"
-                      : "bg-white text-slate-800 rounded-bl-none border border-slate-200/90 shadow-xs"
+                      ? "bg-neutral-900 text-white rounded-tr-xs shadow-sm"
+                      : "bg-white text-slate-800 rounded-tl-xs border border-slate-200/80 shadow-[0_2px_8px_rgba(0,0,0,0.03)]"
                   }`}
                 >
-                  {/* Optional Status / Intent Badge */}
+                  {/* Status Badge */}
                   {msg.badge && (
-                    <div className="mb-2">
+                    <div className="mb-1.5">
                       <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold tracking-wider ${
+                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider ${
                           msg.isOutOfStockNotice
                             ? "bg-amber-100 text-amber-800 border border-amber-300"
                             : msg.isNotFoundNotice
@@ -364,20 +361,20 @@ function LokiAIAgentContent() {
                     </div>
                   )}
 
-                  <p className="whitespace-pre-line">{msg.text}</p>
+                  <p className="whitespace-pre-line font-normal">{msg.text}</p>
 
-                  {/* Interactive Recommended Products Cards */}
+                  {/* Sleek In-Chat Product Cards */}
                   {msg.recommendedProducts && msg.recommendedProducts.length > 0 && (
-                    <div className="mt-3 space-y-2 pt-2 border-t border-slate-100">
+                    <div className="mt-2.5 space-y-2 pt-2 border-t border-slate-100">
                       {msg.recommendedProducts.map((p) => {
                         const isAdded = addedProductId === p.id;
                         const isOut = !p.inStock || p.stockCount <= 0;
                         return (
                           <div
                             key={p.id}
-                            className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3 hover:border-slate-300 transition"
+                            className="p-2 rounded-xl bg-slate-50/80 border border-slate-200/90 flex items-center justify-between gap-2.5 hover:border-slate-300 transition"
                           >
-                            <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="flex items-center gap-2 min-w-0">
                               <Link
                                 href={`/products/${p.id}`}
                                 className="relative w-11 h-11 rounded-lg bg-white border border-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center p-1 group"
@@ -399,7 +396,7 @@ function LokiAIAgentContent() {
                                   {p.name}
                                 </Link>
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="font-black text-red-600 text-xs">
+                                  <span className="font-extrabold text-red-600 text-xs">
                                     NPR {p.price.toLocaleString()}
                                   </span>
                                   {p.originalPrice > p.price && (
@@ -431,7 +428,7 @@ function LokiAIAgentContent() {
                               {!isOut && (
                                 <button
                                   onClick={() => handleAddToCart(p)}
-                                  className="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-red-600 text-white font-bold text-[10px] flex items-center gap-1 transition shadow-xs active:scale-95"
+                                  className="px-2.5 py-1.5 rounded-lg bg-neutral-900 hover:bg-red-600 text-white font-bold text-[10px] flex items-center gap-1 transition shadow-xs active:scale-95"
                                 >
                                   {isAdded ? (
                                     <>
@@ -460,7 +457,7 @@ function LokiAIAgentContent() {
                         <button
                           key={idx}
                           onClick={() => handleSendMessage(action.query)}
-                          className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-red-50 hover:border-red-300 hover:text-red-700 border border-slate-200/80 text-[11px] font-semibold text-slate-700 transition flex items-center gap-1 shadow-xs active:scale-95 text-left"
+                          className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-red-50 hover:border-red-300 hover:text-red-700 border border-slate-200/80 text-[11px] font-medium text-slate-700 transition flex items-center gap-1 shadow-2xs active:scale-95 text-left"
                         >
                           <span>{action.label}</span>
                         </button>
@@ -476,7 +473,7 @@ function LokiAIAgentContent() {
             ))}
 
             {isTyping && (
-              <div className="flex items-center gap-1.5 p-3 rounded-2xl bg-white border border-slate-200/90 w-20 shadow-xs">
+              <div className="flex items-center gap-1.5 px-3 py-2.5 rounded-2xl bg-white border border-slate-200/90 w-16 shadow-xs">
                 <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" />
                 <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce delay-150" />
                 <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce delay-300" />
@@ -486,8 +483,8 @@ function LokiAIAgentContent() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input Box Footer */}
-          <div className="p-3 bg-white border-t border-slate-200">
+          {/* Sleek Input Footer */}
+          <div className="p-3 bg-white border-t border-slate-200/80">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -497,16 +494,16 @@ function LokiAIAgentContent() {
             >
               <input
                 type="text"
-                placeholder="Talk normally in Nepali or English (e.g. kasto xa bro, Dragon 10 ko rate, bat under 2500)..."
+                placeholder="Type in Nepali or English (e.g. kasto xa bro, Dragon 10 ko rate)..."
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-red-500"
+                className="flex-1 px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-red-500 focus:ring-2 focus:ring-red-500/10 transition"
               />
 
               <button
                 type="submit"
                 disabled={!inputMessage.trim()}
-                className="p-2.5 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white transition shadow-md shadow-red-600/30"
+                className="p-2.5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 disabled:opacity-40 text-white transition shadow-md shadow-red-600/30 active:scale-95"
               >
                 <Send className="w-4 h-4" />
               </button>
@@ -520,6 +517,7 @@ function LokiAIAgentContent() {
 
 // ========================================================
 // REAL-TIME RATE & NATURAL CONVERSATIONAL NLP ENGINE
+// Style: Normal human friendly conversational Nepali/English
 // ========================================================
 function generateRateGroundedResponse(
   query: string,
@@ -528,22 +526,15 @@ function generateRateGroundedResponse(
   coupons: ReturnType<typeof useAdminStore.getState>["coupons"]
 ): ChatMessage {
   const rawLower = query.toLowerCase().trim();
-  // Strip special characters for fuzzy matching
   const clean = rawLower
     .replace(/[\?\,\.\!\@\#\$\%\^\&\*\(\)\_\+\-\=\[\]\{\}\;\:\'\"\\\|\<\>\/]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 
-  // Helper: Find in-stock items
   const inStockProducts = products.filter((p) => p.inStock && p.stockCount > 0);
-
-  // Helper matching functions
   const has = (re: RegExp) => re.test(clean) || re.test(rawLower);
 
-  // --------------------------------------------------------
-  // 1. "SUNA NA" / "SUNANA" / "BANA NA" / ATTENTION OPENERS
-  // (e.g. "suna na bro", "sunana", "bana na dai", "oi bro")
-  // --------------------------------------------------------
+  // 1. "SUNA NA" / ATTENTION
   if (
     has(/^(suna\s*na|sunana|bana\s*na|vanana|bhana\s*na|suna\s*bana|suna|sunnus|bhandinus|vandinus)\b/i) ||
     has(/^(oi|oye|hey\s*bro|oi\s*bro|dai\s*suna|daju\s*suna)\b/i)
@@ -551,23 +542,19 @@ function generateRateGroundedResponse(
     return {
       id: `ai-${Date.now()}`,
       sender: "ai",
-      text: `Hajur bro! 🙏 Bhandai garnus, ma dhyan diyera sunirakheko chhu.\n\nTapaiko table tennis game ko barema, kunai specific bat (Dragon 10, Dragon 8), court shoes, delivery, ya discount coupons ko barema k sodhnu thyo?`,
+      text: `Hajur bro, bhannus na! Ma sunirakheko chhu. K sodhnu thyo? Bat, jutta, delivery ya kunai item ko rate?`,
       timestamp: "Just now",
-      badge: "LISTENING",
+      badge: "CHATTING",
       quickActions: [
-        { label: "🏓 Dragon 10 Carbon Rate", query: "Dragon 10 ko rate kati ho?" },
+        { label: "🏓 Dragon 10 Rate", query: "Dragon 10 ko rate kati ho?" },
         { label: "⚡ Dragon 8 Attack Rate", query: "Dragon 8 Pro ko rate kasto chha?" },
         { label: "👟 Swift Court Shoes", query: "Show me court shoes rate" },
         { label: "🚚 Delivery Charges", query: "Delivery charges kati ho?" },
-        { label: "🎟️ Active Coupons", query: "Any active coupon codes?" },
       ],
     };
   }
 
-  // --------------------------------------------------------
-  // 2. GREETINGS & CASUAL "HOW ARE YOU" (Supports 'x' and 'ch' spellings!)
-  // (e.g. "k chha bro", "k xa", "kasto xa", "sanchai", "hello", "namaste")
-  // --------------------------------------------------------
+  // 2. GREETINGS & CASUAL "HOW ARE YOU"
   if (
     has(/\b(namaste|namaskar|नमस्ते|नमस्कार)\b/i) ||
     has(/\b(hi|hello|hey|yo|hiya|hola)\b/i) ||
@@ -580,33 +567,29 @@ function generateRateGroundedResponse(
     return {
       id: `ai-${Date.now()}`,
       sender: "ai",
-      text: `Namaste bro! 🙏 Ekdam majja chha yeta, table tennis ko nayanaya ITTF bats ra competition balls pack gari raheko chhu!\n\nTapaiko kasto chaldai chha? Aaja TT khelne mood ma ho ki naya equipment explore garne sochnu bhayeko chha?\n\n🏓 **Tapaiko game kasto chha?** Attacking topspin rallies khelnu hunchha ki controlled defense?`,
+      text: `Sanchai chhu bro! 🙏 Tapaiko kasto chaldai chha? Aaja TT khelna naya bat ya gear khojdai hunuhunchha?`,
       timestamp: "Just now",
-      badge: "FRIENDLY COACH",
+      badge: "COACH",
       recommendedProducts: inStockProducts.slice(0, 2),
       quickActions: [
-        { label: "🏓 Dragon 10 Carbon Rate", query: "Dragon 10 ko rate kati ho?" },
+        { label: "🏓 Dragon 10 Rate", query: "Dragon 10 ko rate kati ho?" },
         { label: "⚡ Dragon 8 Attack Rate", query: "Dragon 8 Pro ko rate kasto chha?" },
         { label: "👟 Swift Court Shoes", query: "Show me court shoes rate" },
         { label: "💰 Rackets under NPR 2,500", query: "Rackets under NPR 2500" },
-        { label: "🚚 Delivery Charges", query: "Delivery charges kati ho?" },
       ],
     };
   }
 
-  // --------------------------------------------------------
-  // 3. CASUAL PERSONAL BANTER: "KHANA KHAYAU" / "K GARDAI XAU" / "KATA XAU"
-  // --------------------------------------------------------
+  // 3. PERSONAL BANTER: "KHANA KHAYAU" / "K GARDAI XAU" / "KATA XAU"
   if (has(/\b(khana\s*(khayau|khayo|khayeu|khanu\s*bhayou|khanu\s*bhayo|khaye))\b/i)) {
     return {
       id: `ai-${Date.now()}`,
       sender: "ai",
-      text: `Haha ma ta AI assistant hu bro! Khana ta bijuli ra data matra khanchhu 😄⚡\n\nTara tapailai best table tennis equipment, factory rates, ra fast delivery dilauna ma 24/7 ready chhu! Tapaile chai khana khanu bhayo ni? TT practice kasto hudai chha aaja?`,
+      text: `Haha ma ta bot hu bro, khana ta bijuli matra khanchhu 😄 Tapaile khanu bhayo ni? Aaja TT khelne mood ma ho?`,
       timestamp: "Just now",
-      badge: "CASUAL CHIT-CHAT",
+      badge: "FUN",
       quickActions: [
-        { label: "🏓 Check Dragon 10 Rate", query: "Dragon 10 ko rate kati ho?" },
-        { label: "⚡ Check Dragon 8 Attack", query: "Dragon 8 Pro ko rate kasto chha?" },
+        { label: "🏓 Dragon 10 Rate", query: "Dragon 10 ko rate kati ho?" },
         { label: "👟 Swift Court Shoes", query: "Show me court shoes rate" },
       ],
     };
@@ -616,12 +599,11 @@ function generateRateGroundedResponse(
     return {
       id: `ai-${Date.now()}`,
       sender: "ai",
-      text: `Kathmandu central warehouse ma basera live table tennis orders ra Dragon series blades ko inventory herdai chhu bro! 📦🏓\n\nTapaiko aaja TT practice bhayo ki nai? Naya bat, rubber sheet ya shoes khojirahanu bhayeko chha?`,
+      text: `Kathmandu warehouse ma basera live orders herdai chhu bro! Tapaiko TT game kasto chaldai chha?`,
       timestamp: "Just now",
-      badge: "STORE DESK",
+      badge: "ONLINE",
       quickActions: [
-        { label: "🏓 Dragon 10 Carbon Rate", query: "Dragon 10 ko rate kati ho?" },
-        { label: "👟 Swift Court Shoes", query: "Show me court shoes rate" },
+        { label: "🏓 Dragon 10 Rate", query: "Dragon 10 ko rate kati ho?" },
         { label: "🚚 Delivery Charges", query: "Delivery charges kati ho?" },
       ],
     };
@@ -631,20 +613,17 @@ function generateRateGroundedResponse(
     return {
       id: `ai-${Date.now()}`,
       sender: "ai",
-      text: `Hamro main showroom ra distribution center Kathmandu, Nepal ma chha bro! 📍\n\nYatai bata Kathmandu Valley bhari 24 hours ma ra Pokhara, Chitwan, Butwal, Biratnagar, Dharan samet sabai 77 districts ma express courier deliver garchhau.\n\nTapai kata bata bolirahanu bhayeko chha? Tapaiko city ma deliver garna milchha!`,
+      text: `Hamro main showroom ra warehouse Kathmandu ma chha bro! Yatai bata valley bhari 24 hours ma ra bahira express courier bata deliver hunchha. Tapai kata bata ho?`,
       timestamp: "Just now",
-      badge: "KATHMANDU HUB",
+      badge: "KTM HUB",
       quickActions: [
-        { label: "🚚 Delivery Charges", query: "Delivery charges kati ho?" },
+        { label: "🚚 Delivery Rates", query: "Delivery charges kati ho?" },
         { label: "💳 Payment Methods", query: "Kasari payment garne?" },
-        { label: "🏓 Best Rackets", query: "Dragon 10 ko rate kati ho?" },
       ],
     };
   }
 
-  // --------------------------------------------------------
-  // 4. "NEPALI BUJHXAU" / "NEPALI BOLNA AAUXA" (Language Check)
-  // --------------------------------------------------------
+  // 4. "NEPALI BUJHXAU"
   if (
     has(/\b(nepali\s*(bolxau|bujhxau|aauxa|bolchhau|bujhchhau|aaucha|bolna\s*aauxa))\b/i) ||
     has(/\b(can\s*you\s*speak\s*nepali|nepali\s*language|nepali\s*aunchha)\b/i)
@@ -652,263 +631,196 @@ function generateRateGroundedResponse(
     return {
       id: `ai-${Date.now()}`,
       sender: "ai",
-      text: `Ekdam majjale bujhchhu ni bro! 🙏\n\nNepali, English, ya Romanized Nepali (jasari tapailai sajilo lagchha) tyasari nai kura garna saknu hunchha.\n\nTable tennis bats, rubbers, balls, jutta, rates, delivery — tapailai k kura ma help chahiyeko chha?`,
+      text: `Majjale bujhchhu ni bro! 🙏 Nepali, English, jasari sajilo lagchha tyasari kura garnus na. K ma help garum?`,
       timestamp: "Just now",
-      badge: "BILINGUAL READY",
+      badge: "BILINGUAL",
       quickActions: [
-        { label: "🏓 Dragon 10 Carbon Rate", query: "Dragon 10 ko rate kati ho?" },
-        { label: "⚡ Dragon 8 Attack Rate", query: "Dragon 8 Pro ko rate kasto chha?" },
+        { label: "🏓 Dragon 10 Rate", query: "Dragon 10 ko rate kati ho?" },
         { label: "👟 Swift Court Shoes", query: "Show me court shoes rate" },
       ],
     };
   }
 
-  // --------------------------------------------------------
-  // 5. "TIMI MANXE HO KI BOT?" / "TIMI KO HAU?" / BOT IDENTITY
-  // --------------------------------------------------------
+  // 5. IDENTITY: "TIMI MANXE HO KI BOT"
   if (
     has(/\b((manxe|manche|human)\s*(ho\s*ki|ho)?\s*(bot|robot|ai))\b/i) ||
     has(/\b((timi|tapai)\s*(ko\s*hau|ko\s*ho|k\s*hau|k\s*ho))\b/i) ||
     has(/\b(who\s*are\s*you|what\s*are\s*you)\b/i) ||
-    has(/\btimro\s*(nam|name)\s*k\s*ho\b/i) ||
-    has(/\b(k\s*help|k\s*garna|k\s*garchhau|k\s*garchau)\s*(sakxau|sakchhau|milxa|milchha)\b/i)
+    has(/\btimro\s*(nam|name)\s*k\s*ho\b/i)
   ) {
     return {
       id: `ai-${Date.now()}`,
       sender: "ai",
-      text: `Ma LOKI Zone Nepal ko official AI Table Tennis Advisor hu 🤖🏓 — Coach jastai friendly ra genuine!\n\nStore admin le Supabase ma products ko rate, stock ya discounts update garna saath malai real-time thaha hunchha. Ma tapailai:\n• Real-time equipment rates & MRP\n• Playstyle recommendations (Attacking loop vs Defensive control)\n• Warehouse stock availability\n• Valley & Outside Valley delivery charges\n• Active discount coupons\n\nsabai kura ma 1-second mai accurate help dinchhu! Tapaiko kasto requirement chha?`,
+      text: `Ma LOKI Zone Nepal ko AI advisor hu bro 🤖 — human jastai live rate, stock ra bat suggestions dinchhu. K help garna sakchhu?`,
       timestamp: "Just now",
-      badge: "AI ADVISOR",
+      badge: "AI COACH",
       quickActions: [
-        { label: "🏓 Check Dragon 10 Rate", query: "Dragon 10 ko rate kati ho?" },
-        { label: "⚡ Check Dragon 8 Attack", query: "Dragon 8 Pro ko rate kasto chha?" },
-        { label: "💰 Rackets under NPR 2,500", query: "Rackets under NPR 2500" },
+        { label: "🏓 Dragon 10 Rate", query: "Dragon 10 ko rate kati ho?" },
+        { label: "⚡ Dragon 8 Attack", query: "Dragon 8 Pro ko rate kasto chha?" },
       ],
     };
   }
 
-  // --------------------------------------------------------
-  // 6. SHORT AGREEMENTS: "THIK XA" / "OK" / "HUSS" / "LA"
-  // --------------------------------------------------------
+  // 6. SHORT AGREEMENT: "THIK XA" / "OK" / "HUSS"
   if (
     has(/^(thik\s*(xa|cha|chha)|ok|okay|huss|la|hunchha|hunxa|sahi\s*ho|bujhe|ekdam\s*ramro|great|perfect|nice)$/i)
   ) {
     return {
       id: `ai-${Date.now()}`,
       sender: "ai",
-      text: `Huss bro! Kunai pani bela gear upgrade garna man bhaye ya query bhaye bhandai garnus hai.\n\nAttacking offensive loop ko lagi **LOKI Dragon 10 Carbon** (NPR 2,499) ra **Dragon 8 Pro** (NPR 2,199) ahile warehouse ma ready in-stock chhan. Tapailai kunai item check garnu parla?`,
+      text: `Huss bro! Kunai bat ya gear check garnu pare bhannus hai. Dragon 10 ra Dragon 8 stock ma ready chhan.`,
       timestamp: "Just now",
-      badge: "COACH READY",
-      recommendedProducts: inStockProducts.slice(0, 2),
+      badge: "READY",
       quickActions: [
         { label: "🏓 Dragon 10 Carbon Rate", query: "Dragon 10 ko rate kati ho?" },
         { label: "⚡ Dragon 8 Attack Rate", query: "Dragon 8 Pro ko rate kasto chha?" },
-        { label: "👟 Swift Court Shoes", query: "Show me court shoes rate" },
       ],
     };
   }
 
-  // --------------------------------------------------------
-  // 7. GRATITUDE: "DHANYABAD" / "THANK YOU" / "DAMMI"
-  // --------------------------------------------------------
+  // 7. GRATITUDE: "DHANYABAD"
   if (has(/\b(dhanyabad|dhanyabhad|thank\s*you|thanks|thank\s*u|dherai\s*ramro|good\s*job|welldone|dammi)\b/i)) {
     return {
       id: `ai-${Date.now()}`,
       sender: "ai",
-      text: `Swagatam bro! 🙏 Tapailai help garna pauda ekdam khusi lagyo.\n\nTable tennis court ma aggressive topspin smashes handai garnus! Aru khei sodhnu pare malai bhannu hola hai — enjoy your game! 🏓🔥`,
+      text: `Swagatam bro! 🙏 Match ramrari khelnus hai. Aru khei sodhnu pare ma yatai chhu! 🏓`,
       timestamp: "Just now",
-      badge: "ALWAYS WELCOME",
+      badge: "WELCOME",
       quickActions: [
         { label: "🏓 Shop Rackets", query: "Dragon 10 ko rate kati ho?" },
-        { label: "🚚 Check Delivery Rates", query: "Delivery charges kati ho?" },
       ],
     };
   }
 
-  // --------------------------------------------------------
-  // 8. LAUGHS: "HAHA" / "LOL" / "HEHE"
-  // --------------------------------------------------------
+  // 8. LAUGHS
   if (has(/^(haha|hahaha|hehe|lol|rofl|xd)+$/i)) {
     return {
       id: `ai-${Date.now()}`,
       sender: "ai",
-      text: `Haha table tennis court ma jastai yeta pani full positive vibe chha! 😄\n\nTapai match ma fast offensive attack khelna ruchaunu hunchha ki smooth placement & defense? Aaja kunai gear check garne plan chha?`,
+      text: `Haha match ma jastai yeta pani full positive energy chha! 😄 Aaja kunai bat ya shoes check garne plan chha?`,
       timestamp: "Just now",
-      badge: "POSITIVE VIBES",
+      badge: "SMILE",
       quickActions: [
         { label: "🏓 Dragon 10 Carbon", query: "Dragon 10 ko rate kati ho?" },
-        { label: "⚡ Dragon 8 Attack", query: "Dragon 8 Pro ko rate kasto chha?" },
+        { label: "👟 Swift Court Shoes", query: "Show me court shoes rate" },
       ],
     };
   }
 
-  // --------------------------------------------------------
-  // 9. SIGN-OFF: "BYE" / "GOOD NIGHT" / "PAXI KURA GARUMLA"
-  // --------------------------------------------------------
+  // 9. SIGN-OFF: "BYE"
   if (has(/\b(bye|tata|good\s*night|shuva\s*ratri|paxi\s*kura|bholi\s*kura|see\s*you|bhetumla)\b/i)) {
     return {
       id: `ai-${Date.now()}`,
       sender: "ai",
-      text: `Huss sathi! Shuva ratri / Tata! 🙏\n\nRamrari khelnus, practice dhuwadhaar garnus. Kunai pani bela ITTF approved pro-gear chahida LOKI Zone Nepal ma samjhinu hola! 🏓`,
+      text: `Huss bro, Tata! Ramrari khelnus, practice dhuwadhaar garnus hai 🙏🏓`,
       timestamp: "Just now",
-      badge: "GOODBYE",
-      quickActions: [
-        { label: "🏓 Explore Catalog", query: "What products do you have?" },
-      ],
+      badge: "BYE",
     };
   }
 
-  // --------------------------------------------------------
-  // 10. CATALOG OVERVIEW: "K K PAUCHA" / "WHAT PRODUCTS"
-  // --------------------------------------------------------
-  if (
-    has(/\bk\s*k\s*(paucha|pauxa|bechxau|bechchau|rakheko|chha|cha|xa)\b/i) ||
-    has(/\b(what\s*do\s*you\s*sell|what\s*products|all\s*products|catalog|collection)\b/i)
-  ) {
-    return {
-      id: `ai-${Date.now()}`,
-      sender: "ai",
-      text: `🏓 **Hamro LOKI Zone Nepal Official Catalog:**\n\n1. **Championship Rackets:** LOKI Dragon 10 Carbon (NPR 2,499) ra Dragon 8 Pro (NPR 2,199)\n2. **Pro Footwear:** LOKI Swift Court Shoes (NPR 3,499) with anti-slip gum sole\n3. **Tournament Rubbers:** LOKI RXTON 3 High-Tension Sticky Rubber (NPR 1,499)\n4. **Official Match Balls:** LOKI 3-Star ITTF 40+ Competition Balls (Pack of 6, NPR 299)\n5. **Accessories & Apparel:** Hard-Shell Case (NPR 499), Aeroflex Jersey (NPR 1,799), Pro Shorts (NPR 1,199)\n\nSabai items ready-to-ship stock ma chhan! Tapai kun category explore garna chahanu hunchha?`,
-      timestamp: "Just now",
-      badge: "STORE CATALOG",
-      recommendedProducts: inStockProducts.slice(0, 3),
-      quickActions: [
-        { label: "🏓 Dragon 10 Carbon", query: "Dragon 10 ko rate kati ho?" },
-        { label: "👟 Swift Court Shoes", query: "Show me court shoes rate" },
-        { label: "⚪ 3-Star Balls", query: "Tell me about 3 star balls" },
-        { label: "🚚 Delivery Rates", query: "Delivery charges kati ho?" },
-      ],
-    };
-  }
-
-  // --------------------------------------------------------
-  // 11. SHOWROOM / LOCATION & STORE CONTACT
-  // --------------------------------------------------------
+  // 10. SHOWROOM & CONTACT
   if (
     has(/\b(pasal\s*kata|showroom|location|store\s*kata|address|thamel|kathmandu|contact|phone|whatsapp|number|call)\b/i)
   ) {
     return {
       id: `ai-${Date.now()}`,
       sender: "ai",
-      text: `📍 **LOKI Zone Nepal Showroom & Fulfillment Hub:**\n• **Showroom & Central Warehouse:** Kathmandu, Nepal\n• **Direct Support & WhatsApp:** +977 9800000000 (Open 9:00 AM – 8:00 PM daily)\n• **Nationwide Courier:** Kathmandu Valley bhari same-day/next-day dispatch, ra Pokhara, Chitwan, Butwal, Biratnagar, Dharan, Nepalgunj samet sabai 77 districts ma express delivery garinchha!\n\nTapaile online 1-click mai order garna saknu hunchha, payment **Cash on Delivery (COD)**, **eSewa**, **Khalti**, ya **Fonepay QR** bata sajilai garna milchha!`,
+      text: `Hamro showroom ra warehouse Kathmandu ma chha bro. Support WhatsApp: +977 9800000000 ho. Online order garda COD ya eSewa bata tirna milchha!`,
       timestamp: "Just now",
-      badge: "STORE LOCATION",
+      badge: "LOCATION",
       quickActions: [
-        { label: "🚚 Check Delivery Rates", query: "Delivery charges kati ho?" },
+        { label: "🚚 Delivery Rates", query: "Delivery charges kati ho?" },
         { label: "💳 Payment Methods", query: "Kasari payment garne?" },
-        { label: "🏓 Check Dragon 10", query: "Dragon 10 ko rate kati ho?" },
       ],
     };
   }
 
-  // --------------------------------------------------------
-  // 12. AUTHENTICITY, ITTF GUARANTEE & WARRANTY
-  // --------------------------------------------------------
+  // 11. AUTHENTICITY / ITTF GUARANTEE
   if (
     has(/\b(genuine|original|nakali|copy|duplicate|fake|ittf|warranty|guarantee|bharosa|authentic)\b/i)
   ) {
     return {
       id: `ai-${Date.now()}`,
       sender: "ai",
-      text: `🛡️ **100% Genuine ITTF Certified Guarantee:**\n\nHami LOKI Sports (ITTF Approved Manufacturer) ko Nepal ma official authorized partner hau.\n\n• **Factory Sealed Packaging:** Sabai rackets ra rubbers brand-new factory sealed packaging ma aauchhan.\n• **ITTF Approved Rubber:** Official international tournament regulations compliant.\n• **7-Day Hassle-Free Replacement:** Manufacturing defect bhetiyeमा 7 din bhitra immediate replacement guarantee.\n• **Quality Inspected:** Dispatch agadi pratyek blade ra gear physical inspection pass hunchha.\n\nNishchinta bhayera tapai aafno game upgrade garna saknu hunchha!`,
+      text: `100% original ITTF certified ho bro! Hami official LOKI distributor hau, sealed box aauchha ra 7-day replacement guarantee pani chha.`,
       timestamp: "Just now",
-      badge: "ITTF CERTIFIED",
-      recommendedProducts: inStockProducts.filter((p) => p.category === "Rackets" || p.category === "Balls").slice(0, 2),
+      badge: "ITTF GUARANTEE",
+      recommendedProducts: inStockProducts.slice(0, 2),
       quickActions: [
         { label: "🏓 View ITTF Rackets", query: "Dragon 10 ko rate kati ho?" },
-        { label: "⚪ 3-Star ITTF Balls", query: "Tell me about 3 star balls" },
-        { label: "🎟️ Check Active Coupons", query: "Any active coupon codes?" },
+        { label: "⚪ 3-Star Balls", query: "Tell me about 3 star balls" },
       ],
     };
   }
 
-  // --------------------------------------------------------
-  // 13. PAYMENT METHODS & CASH ON DELIVERY (COD)
-  // --------------------------------------------------------
+  // 12. PAYMENT & COD
   if (
     has(/\b(payment|kasari\s*tirne|pay|esewa|khalti|fonepay|qr|cod|cash\s*on\s*delivery|online\s*pay|paisa)\b/i)
   ) {
     return {
       id: `ai-${Date.now()}`,
       sender: "ai",
-      text: `💳 **Multiple Flexible Payment Options Available:**\n\n1. **Cash on Delivery (COD):** Samaan tapai ko doorstep ma aayepaxi haat ma check garera paisa tirna milchha (Kathmandu Valley & major hub cities).\n2. **eSewa & Khalti:** Instant wallet transfer directly checkout ma.\n3. **Fonepay QR:** Kunai pani Nepali Mobile Banking app bata 1-scan instant payment.\n\nKunai pani extra hidden charges chaina! Order garepaxi SMS / WhatsApp ma live courier tracking details aauchha.`,
+      text: `Cash on Delivery (COD) chha bro — saman aayepaxi haat ma paisa tirna milchha. Sathai eSewa, Khalti, ya Fonepay QR bata pani sajilai payment hunchha!`,
       timestamp: "Just now",
-      badge: "PAYMENT SUPPORT",
+      badge: "PAYMENT",
       quickActions: [
-        { label: "🚚 Check Delivery Rates", query: "Delivery charges kati ho?" },
+        { label: "🚚 Delivery Charges", query: "Delivery charges kati ho?" },
         { label: "🏓 Dragon 10 Rate", query: "Dragon 10 ko rate kati ho?" },
-        { label: "🎟️ Active Coupons", query: "Any active coupon codes?" },
       ],
     };
   }
 
-  // --------------------------------------------------------
-  // 14. DELIVERY RATES & FREE SHIPPING THRESHOLD
-  // --------------------------------------------------------
+  // 13. DELIVERY RATES
   if (
     has(/\b(delivery|shipping|charge|courier|bhada|pokhara|chitwan|butwal|dharan|biratnagar|nepalgunj|bhaktapur|lalitpur|ktm|valley)\b/i)
   ) {
     return {
       id: `ai-${Date.now()}`,
       sender: "ai",
-      text: `🚚 **Official Store Delivery Rates (Ground-Checked):**\n\n• **Inside Kathmandu Valley (KTM, Lalitpur, Bhaktapur):** NPR ${settings.deliveryInsideValley} (Within 24 Hours)\n• **Outside Valley (Pokhara, Chitwan, Butwal, Biratnagar, etc.):** NPR ${settings.deliveryOutsideValley} (2-3 Business Days)\n• 🔥 **FREE DELIVERY OFFER:** NPR ${settings.freeShippingThreshold.toLocaleString()} bhanda mathi ko kunai pani order ma delivery **bilkul FREE** hunchha!\n\nAll parcels are insured and dispatched through reliable courier partners with real-time tracking.`,
+      text: `Kathmandu Valley bhari **NPR ${settings.deliveryInsideValley}** parcha (24 hours ma aipugcha), valley bahira **NPR ${settings.deliveryOutsideValley}** parcha bro.\n\nTara NPR ${settings.freeShippingThreshold.toLocaleString()} bhanda mathi ko order ma delivery **bilkul FREE** chha!`,
       timestamp: "Just now",
-      badge: "DELIVERY RATES",
+      badge: "DELIVERY",
       quickActions: [
-        { label: "🔥 Free Delivery Gear", query: "Show me products above 2000 for free delivery" },
-        { label: "🏓 Dragon 10 Carbon Rate", query: "Dragon 10 ko rate kati ho?" },
-        { label: "🎟️ Active Coupons", query: "Any active coupon codes?" },
+        { label: "🔥 Free Delivery Items", query: "Rackets under NPR 2500" },
+        { label: "🏓 Dragon 10 Rate", query: "Dragon 10 ko rate kati ho?" },
       ],
     };
   }
 
-  // --------------------------------------------------------
-  // 15. ACTIVE COUPONS & PROMO CODES
-  // --------------------------------------------------------
+  // 14. COUPONS
   if (has(/\b(coupon|discount|promo|offer|code|voucher|chhut)\b/i)) {
     const activeCoupons = coupons.filter((c) => c.active);
     if (activeCoupons.length === 0) {
       return {
         id: `ai-${Date.now()}`,
         sender: "ai",
-        text: `Currently, direct factory discounts (15% – 25% OFF) are already applied directly on our gear prices! Plus, tapai le **NPR ${settings.freeShippingThreshold.toLocaleString()}** bhanda mathi cart banaye ma **FREE Shipping** paunu hunchha.`,
+        text: `Ahile sidhai gear ma factory discount lagisakeko chha bro! NPR ${settings.freeShippingThreshold.toLocaleString()} mathi free delivery pani chha.`,
         timestamp: "Just now",
-        badge: "DISCOUNTS APPLIED",
+        badge: "OFFER",
         quickActions: [
-          { label: "🏓 View Best Sellers", query: "Dragon 10 ko rate kati ho?" },
-          { label: "👟 Court Shoes", query: "Show me court shoes rate" },
+          { label: "🏓 Dragon 10 Rate", query: "Dragon 10 ko rate kati ho?" },
         ],
       };
     }
 
-    const couponLines = activeCoupons
-      .map(
-        (c) =>
-          `• 🎟️ **${c.code}**: ${
-            c.discountType === "percent" ? `${c.discountValue}% OFF` : `NPR ${c.discountValue} FLAT OFF`
-          } (Min spend: NPR ${c.minSpend.toLocaleString()})`
-      )
+    const lines = activeCoupons
+      .map((c) => `• **${c.code}**: ${c.discountType === "percent" ? `${c.discountValue}% OFF` : `NPR ${c.discountValue} OFF`}`)
       .join("\n");
 
     return {
       id: `ai-${Date.now()}`,
       sender: "ai",
-      text: `🎟️ **Active Promotional Coupons Available Right Now:**\n\n${couponLines}\n\n💡 **How to Apply:** Checkout garda 'Coupon Code' box ma yo code enter garnus, discount turuntai apply hunchha! Tapaile aaja kun gear line sochnu bhayeko chha?`,
+      text: `Active coupon codes yo chhan bro:\n${lines}\n\nCheckout garda code halnus, discount thap hunchha!`,
       timestamp: "Just now",
-      badge: "ACTIVE COUPONS",
+      badge: "COUPONS",
       quickActions: [
         { label: "🏓 Shop Dragon 10", query: "Dragon 10 ko rate kati ho?" },
-        { label: "⚡ Shop Dragon 8 Pro", query: "Dragon 8 Pro ko rate kasto chha?" },
-        { label: "👟 View Court Shoes", query: "Show me court shoes rate" },
+        { label: "⚡ Shop Dragon 8", query: "Dragon 8 Pro ko rate kasto chha?" },
       ],
     };
   }
 
-  // --------------------------------------------------------
-  // 16. COMPETITOR BRANDS / EXTERNAL GEAR DETECTION
-  // (Butterfly, Viscaria, Timo Boll, DHS, Hurricane, Stiga, Yasaka, Donic, Mizuno, Asics)
-  // Requirement: "yedi tesle out of sodhyo bhane tesle not found pani dela ra tyo jastai aaru product haru dekhaulan hai"
-  // --------------------------------------------------------
+  // 15. COMPETITOR BRANDS (Butterfly, DHS, etc.)
   const competitorKeywords = [
     "butterfly",
     "viscaria",
@@ -947,115 +859,56 @@ function generateRateGroundedResponse(
   const matchedCompetitor = competitorKeywords.find((k) => rawLower.includes(k));
 
   if (matchedCompetitor) {
-    let competitorCategory: "blade" | "rubber" | "shoes" | "general" = "general";
-    if (
-      rawLower.includes("viscaria") ||
-      rawLower.includes("timo boll") ||
-      rawLower.includes("blade") ||
-      rawLower.includes("bat") ||
-      rawLower.includes("racket") ||
-      rawLower.includes("clipper") ||
-      rawLower.includes("carbonado") ||
-      rawLower.includes("cybershape") ||
-      rawLower.includes("primorac") ||
-      rawLower.includes("zhang jike") ||
-      rawLower.includes("ma long")
-    ) {
-      competitorCategory = "blade";
-    } else if (
-      rawLower.includes("tenergy") ||
-      rawLower.includes("dignics") ||
-      rawLower.includes("hurricane") ||
-      rawLower.includes("rakza") ||
-      rawLower.includes("rubber") ||
-      rawLower.includes("sheet") ||
-      rawLower.includes("bluefire") ||
-      rawLower.includes("evolution")
-    ) {
-      competitorCategory = "rubber";
-    } else if (rawLower.includes("shoe") || rawLower.includes("mizuno") || rawLower.includes("asics")) {
-      competitorCategory = "shoes";
-    }
-
     const dragon10 = products.find((p) => p.id === "loki-dragon-10") || products[0];
     const dragon8 = products.find((p) => p.id === "loki-dragon-8") || products[1];
-    const rxton3 = products.find((p) => p.id === "loki-rxton-3");
-    const shoes = products.find((p) => p.category === "Footwear");
-
-    let recs: Product[] = [];
-    let customNote = "";
-
-    if (competitorCategory === "blade") {
-      recs = [dragon10, dragon8].filter(Boolean) as Product[];
-      customNote = `Viscaria / Timo Boll ALC (Carbon offensive blade) Nepal ma NPR 22,000–30,000+ parcha, tara hamro **LOKI Dragon 10 Carbon Racket** (NPR ${dragon10.price.toLocaleString()}) le 5-ply wood + carbon micro-mesh grid sanga 92 Control ra 88 Spin ko pro-level performance matra NPR ${dragon10.price.toLocaleString()} ma dincha!`;
-    } else if (competitorCategory === "rubber") {
-      recs = [rxton3 || dragon10].filter(Boolean) as Product[];
-      customNote = `DHS Hurricane 3 / Tenergy jastai explosive topspin arc ra high-friction tacky grip ko lagi hamro **LOKI RXTON 3 Rubber** (NPR ${rxton3?.price.toLocaleString() || "1,499"}) ITTF certified direct alternative ho!`;
-    } else if (competitorCategory === "shoes") {
-      recs = [shoes || dragon10].filter(Boolean) as Product[];
-      customNote = `Mizuno / Asics court shoes jastai anti-slip gum rubber grip ra quick lateral footwork cushioning ko lagi hamro **LOKI Swift Court Shoes** (NPR ${shoes?.price.toLocaleString() || "3,499"}) specifically designed chha!`;
-    } else {
-      recs = inStockProducts.slice(0, 2);
-      customNote = `Hamro LOKI ITTF approved championship gear pro-level specs sanga factory-direct affordable price ma available chha.`;
-    }
 
     return {
       id: `ai-${Date.now()}`,
       sender: "ai",
-      text: `🔍 **Catalog Status: Not Found in LOKI Catalog**\n\nTapai le sodhnu bhayeko **"${matchedCompetitor.toUpperCase()}"** hamro official store catalog ma available chhaina (Not Found). Hamro store Nepal ma **Official LOKI (ITTF Approved Manufacturer)** brand ko exclusive authorized partner ho.\n\n⭐ **Tara nishchinta hunus! Tyo sanga ustai pro-level specs bhayeko hamro official LOKI gear available chha:**\n${customNote}\n\nTala diyeko matching gear check garnus — 1-click mai cart ma halera checkout garna saknu hunchha!`,
+      text: `Butterfly / ${matchedCompetitor.toUpperCase()} hamro ma chaina bro, hami Nepal ma official LOKI ITTF ko exclusive store hau.\n\nTara Viscaria / ALC carbon blade jastai pro-level speed ra spin bhayeko hamro **Dragon 10 Carbon (NPR ${dragon10.price.toLocaleString()})** chha — dherai sasto ma tournament level performance dinchha! Tala check garnus na:`,
       timestamp: "Just now",
-      badge: "NOT IN STORE - BEST LOKI MATCH",
+      badge: "LOKI MATCH",
       isNotFoundNotice: true,
-      recommendedProducts: recs,
+      recommendedProducts: [dragon10, dragon8],
       quickActions: [
         { label: "🏓 Dragon 10 Carbon Rate", query: "Dragon 10 ko rate kati ho?" },
         { label: "⚡ Dragon 8 Attack Rate", query: "Dragon 8 Pro ko rate kasto chha?" },
-        { label: "🎟️ View Active Coupons", query: "Any active coupon codes?" },
       ],
     };
   }
 
-  // --------------------------------------------------------
-  // 17. OUT OF STOCK SPECIFIC QUERIES
-  // --------------------------------------------------------
-  if (has(/\b(out\s*of\s*stock|sakiyeko|sold\s*out)\b/i)) {
-    const outOfStockList = products.filter((p) => !p.inStock || p.stockCount <= 0);
-
-    if (outOfStockList.length === 0) {
-      return {
-        id: `ai-${Date.now()}`,
-        sender: "ai",
-        text: `🎉 Good news! Right now, all our official LOKI equipment in our Kathmandu warehouse is **100% IN STOCK** and ready for same-day dispatch!\n\nTapai kun item lina chahanu hunchha?`,
-        timestamp: "Just now",
-        badge: "ALL IN STOCK",
-        recommendedProducts: inStockProducts.slice(0, 3),
-        quickActions: [
-          { label: "🏓 Dragon 10 Carbon", query: "Dragon 10 ko rate kati ho?" },
-          { label: "👟 Swift Court Shoes", query: "Show me court shoes rate" },
-          { label: "💰 Rackets under NPR 2,500", query: "Rackets under NPR 2500" },
-        ],
-      };
-    }
-
-    const outNames = outOfStockList.map((p) => `• ${p.name} (Restocking soon)`).join("\n");
+  // 16. ORDER TRACKING
+  if (has(/\b(track|tracking|order\s*status|saman\s*kata|kata\s*aipugyo|delivery\s*status|order\s*track)\b/i)) {
     return {
       id: `ai-${Date.now()}`,
       sender: "ai",
-      text: `⚠️ **Current Out of Stock Items:**\n${outNames}\n\nYo items new shipment bata warehouse ma aaudai chha. Tara tapailai game roknu pardaina! Ahile **Ready In-Stock** raheka best-seller alternatives yaha chhan:`,
+      text: `Tapaile hamro [Order Tracking Page](/order-tracking) ma phone number ya order ID halera live delivery status herna saknu hunchha bro! Valley bhari 24 hours ma deliver hunchha.`,
       timestamp: "Just now",
-      badge: "OUT OF STOCK NOTICE",
-      isOutOfStockNotice: true,
+      badge: "TRACKING",
+      quickActions: [
+        { label: "🚚 Delivery Rates", query: "Delivery charges kati ho?" },
+        { label: "📞 Support WhatsApp", query: "Showroom contact number" },
+      ],
+    };
+  }
+
+  // 17. OUT OF STOCK QUERIES
+  if (has(/\b(out\s*of\s*stock|sakiyeko|sold\s*out)\b/i)) {
+    return {
+      id: `ai-${Date.now()}`,
+      sender: "ai",
+      text: `Ahile hamro store ma main items sabai ready in-stock chhan bro! Dragon 10, Dragon 8, Swift shoes sabai warehouse ma ready chha. Kunai item chahiyeko thyo?`,
+      timestamp: "Just now",
+      badge: "IN STOCK",
       recommendedProducts: inStockProducts.slice(0, 2),
       quickActions: [
-        { label: "🏓 Dragon 10 Carbon Rate", query: "Dragon 10 ko rate kati ho?" },
-        { label: "⚡ Dragon 8 Attack Rate", query: "Dragon 8 Pro ko rate kasto chha?" },
+        { label: "🏓 Dragon 10 Carbon", query: "Dragon 10 ko rate kati ho?" },
+        { label: "👟 Swift Court Shoes", query: "Show me court shoes rate" },
       ],
     };
   }
 
-  // --------------------------------------------------------
-  // 18. BUDGET / PRICE RANGE INQUIRY (e.g. under 2500, under 2000, 3000 bhitra, sasto bat)
-  // --------------------------------------------------------
+  // 18. BUDGET QUERIES (under 2500, under 2000, etc.)
   const numberMatch =
     query.match(/(?:under|below|less than|sasto|bhitra)\s*(?:npr|rs\.?)?\s*(\d+)/i) ||
     query.match(/(\d+)\s*(?:under|below|bhitra|samma)/i);
@@ -1068,38 +921,28 @@ function generateRateGroundedResponse(
       return {
         id: `ai-${Date.now()}`,
         sender: "ai",
-        text: `💰 **Found ${affordable.length} Official Gear Options under NPR ${budget.toLocaleString()}:**\n\nHamro store rates anusar tapai ko budget vitra ready-to-ship gear yaha chhan. Sabai items 100% ITTF standard ka chhan:\n\n💡 **Tip:** NPR ${settings.freeShippingThreshold.toLocaleString()} mathi ko cart banaye ma delivery **bilkul FREE** hunchha!`,
+        text: `NPR ${budget.toLocaleString()} bhitra hamra best options yo chhan bro! Sabai ITTF standard ka chhan:`,
         timestamp: "Just now",
-        badge: `BUDGET MATCH (≤ NPR ${budget.toLocaleString()})`,
+        badge: `≤ NPR ${budget.toLocaleString()}`,
         recommendedProducts: affordable.slice(0, 3),
         quickActions: [
-          { label: "🚚 Check Delivery Rates", query: "Delivery charges kati ho?" },
-          { label: "🎟️ Any Active Coupons?", query: "Any active coupon codes?" },
-          { label: "🏓 Compare Blades", query: "Dragon 10 vs Dragon 8 comparison" },
+          { label: "🚚 Delivery Charges", query: "Delivery charges kati ho?" },
+          { label: "🎟️ Active Coupons", query: "Any active coupon codes?" },
         ],
       };
     } else {
-      const cheapest = [...inStockProducts].sort((a, b) => a.price - b.price).slice(0, 2);
       return {
         id: `ai-${Date.now()}`,
         sender: "ai",
-        text: `NPR ${budget.toLocaleString()} vitra kunai items bhetiyena, tara hamro most affordable official competition gear starts at **NPR 299** for LOKI 3-Star ITTF Balls and **NPR 499** for the Hard-Shell Racket Case.\n\nSabai bhanda popular championship rackets **NPR 2,199** (Dragon 8 Pro) ra **NPR 2,499** (Dragon 10 Carbon) bata start hunchha!`,
+        text: `NPR ${budget.toLocaleString()} vitra racket chaina bro, hamro ITTF 3-Star balls NPR 299 ra racket case NPR 499 bata aauchha. Dragon bats NPR 2,199 bata start hunchha!`,
         timestamp: "Just now",
-        badge: "AFFORDABLE GEAR",
-        recommendedProducts: cheapest,
-        quickActions: [
-          { label: "🏓 Dragon 10 Carbon Rate", query: "Dragon 10 ko rate kati ho?" },
-          { label: "⚡ Dragon 8 Attack Rate", query: "Dragon 8 Pro ko rate kasto chha?" },
-        ],
+        badge: "BUDGET",
+        recommendedProducts: inStockProducts.slice(0, 2),
       };
     }
   }
 
-  // --------------------------------------------------------
   // 19. SPECIFIC PRODUCT RATE & DETAILS INQUIRY
-  // Match products dynamically from useAdminStore (synced with DB)
-  // Handles: In-Stock vs Out-Of-Stock dynamically!
-  // --------------------------------------------------------
   const matchedProduct = products.find((p) => {
     const pName = p.name.toLowerCase();
     const pId = p.id.toLowerCase();
@@ -1122,116 +965,63 @@ function generateRateGroundedResponse(
     const p = matchedProduct;
     const isOut = !p.inStock || p.stockCount <= 0;
 
-    // SCENARIO 19A: PRODUCT IS OUT OF STOCK
     if (isOut) {
       const alternatives = inStockProducts.filter((alt) => alt.id !== p.id).slice(0, 2);
-
       return {
         id: `ai-${Date.now()}`,
         sender: "ai",
-        text: `⚠️ **Product Temporarily Out of Stock:**\n\nKshama chahanchhau! Tapai le khojnu bhayeko **${p.name}** ahile warehouse ma sakiyeko chha (new batch shipment aaudai chha).\n\n• Last Retail Rate: NPR ${p.price.toLocaleString()}\n• Current Status: **Out of Stock (Restocking Soon)**\n\n⭐ **Tara tapailai khelna roknu pardaina! Ustai pro-level specs bhayeko hamro Ready In-Stock alternatives yaha chhan:**\n\nTala ko recommended items check garnus — 1-click mai cart ma halera order garna saknu hunchha!`,
+        text: `Kshama chahanchhau bro, ${p.name} ahile sakiyeko chha (restock hudaichha). Tara yo alternatives ready chha, hernus na:`,
         timestamp: "Just now",
-        badge: "OUT OF STOCK - ALTERNATIVES BELOW",
+        badge: "OUT OF STOCK",
         isOutOfStockNotice: true,
         recommendedProducts: alternatives,
         quickActions: [
-          { label: "🏓 Check Dragon 10 Rate", query: "Dragon 10 ko rate kati ho?" },
-          { label: "⚡ Check Dragon 8 Rate", query: "Dragon 8 Pro ko rate kasto chha?" },
-          { label: "🚚 Check Delivery Charges", query: "Delivery charges kati ho?" },
+          { label: "🏓 Dragon 10 Rate", query: "Dragon 10 ko rate kati ho?" },
+          { label: "⚡ Dragon 8 Rate", query: "Dragon 8 Pro ko rate kasto chha?" },
         ],
       };
     }
 
-    // SCENARIO 19B: PRODUCT IS IN STOCK - GIVE EXACT REAL-TIME RATES & SPECS!
-    const discountText = p.discountPercent ? ` (${p.discountPercent}% OFF applied!)` : "";
-    let specsLine = "";
-    if (p.specs) {
-      const parts = [];
-      if (p.specs.bladeType) parts.push(`• **Blade Composition:** ${p.specs.bladeType}`);
-      if (p.specs.rubber) parts.push(`• **Rubber Surface:** ${p.specs.rubber}`);
-      if (p.specs.control) parts.push(`• **Control:** ${p.specs.control}/100 | **Spin:** ${p.specs.spin}/100 | **Speed:** ${p.specs.speed}/100`);
-      if (p.specs.playingStyle) parts.push(`• **Recommended Style:** ${p.specs.playingStyle}`);
-      specsLine = parts.length > 0 ? `\n\n📊 **Performance Specifications:**\n${parts.join("\n")}` : "";
-    }
-
-    let coachTip = "";
-    if (p.category === "Rackets") {
-      coachTip = `\n\n💡 **Coach Advice:** Racket ko rubber sheet lai dust ra moisture bata bachauna euta **Hard-Shell Case** (NPR 499) ra competition balls sangai lida best protection ra longevity hunchha!`;
-    } else if (p.category === "Footwear") {
-      coachTip = `\n\n💡 **Footwork Tip:** LOKI Swift Court Shoes ko non-marking gum sole le indoor wooden ra synthetic court ma 100% anti-slip traction dinchha.`;
-    }
+    const discountNote = p.discountPercent ? ` (mrp NPR ${p.originalPrice.toLocaleString()} ho, ${p.discountPercent}% discount ma chha)` : "";
 
     return {
       id: `ai-${Date.now()}`,
       sender: "ai",
-      text: `🏓 **Live Verified Rate for ${p.name}:**\n\n• **Current Live Rate:** **NPR ${p.price.toLocaleString()}**${discountText}\n• **Original MRP:** NPR ${p.originalPrice.toLocaleString()}\n• **Stock Status:** **${p.stockCount} units available** in Kathmandu warehouse (Ready for fast dispatch)\n• **Category:** ${p.category} | Official ITTF Standard\n\n${p.description}${specsLine}${coachTip}\n\n👉 *Tapaile tala ko 'Add' button bata 1-tap mai cart ma halera checkout garna saknu hunchha!*`,
+      text: `${p.name} ko rate ahile **NPR ${p.price.toLocaleString()}** parcha bro${discountNote}.\n\nKathmandu warehouse ma ${p.stockCount} units ready stock chha. ${p.subtitle || p.description}\n\nTala bata 1-tap mai cart ma halera checkout garna saknu hunchha!`,
       timestamp: "Just now",
-      badge: "LIVE RATE SYNC",
+      badge: "LIVE RATE",
       recommendedProducts: [p],
       quickActions: [
-        { label: "🚚 Delivery Rates", query: "Delivery charges kati ho?" },
-        { label: "🎟️ Any Active Coupons?", query: "Any active coupon codes?" },
-        { label: "🏓 Compare with Other Blades", query: "Dragon 10 vs Dragon 8 comparison" },
+        { label: "🚚 Delivery Charges", query: "Delivery charges kati ho?" },
+        { label: "🎟️ Active Coupons", query: "Any active coupon codes?" },
       ],
     };
   }
 
-  // --------------------------------------------------------
-  // 20. ORDER TRACKING & STATUS
-  // --------------------------------------------------------
-  if (has(/\b(track|tracking|order\s*status|saman\s*kata|kata\s*aipugyo|delivery\s*status|order\s*track)\b/i)) {
-    return {
-      id: `ai-${Date.now()}`,
-      sender: "ai",
-      text: `📦 **Live Order Tracking:**\n\nTapaile order garda prapta bhayeko **Phone Number** ya **Order ID** enter garera hamro official tracking page ma live delivery status check garna saknu hunchha!\n\n👉 [Click here to Track Your Order](/order-tracking)\n\nKathmandu Valley bhari 24 hours ma ra Outside Valley 2-3 business days express courier bata deliver hunchha!`,
-      timestamp: "Just now",
-      badge: "ORDER TRACKING",
-      quickActions: [
-        { label: "📦 Go to Order Tracking Page", query: "Order tracking page" },
-        { label: "🚚 Check Delivery Rates", query: "Delivery charges kati ho?" },
-        { label: "📞 Support WhatsApp", query: "Showroom contact number" },
-      ],
-    };
-  }
-
-  // --------------------------------------------------------
-  // 21. GENERAL RACKET / BAT / BLADE COMPARISON & ADVICE
-  // --------------------------------------------------------
+  // 20. GENERAL RACKET / BAT QUERY
   if (has(/\b(racket|bat|blade|blades)\b/i)) {
     const rackets = inStockProducts.filter((p) => p.category === "Rackets");
     const racketLines = rackets
-      .map(
-        (r, i) =>
-          `${i + 1}. **${r.name}:** NPR ${r.price.toLocaleString()}${
-            r.discountPercent ? ` (${r.discountPercent}% OFF)` : ""
-          } — ${r.specs?.playingStyle || r.subtitle || "Championship Grade"}`
-      )
+      .slice(0, 4)
+      .map((r, i) => `• **${r.name}:** NPR ${r.price.toLocaleString()}`)
       .join("\n");
-
-    const dynamicPills = rackets.slice(0, 3).map((r) => ({
-      label: `🏓 ${r.name} (NPR ${r.price.toLocaleString()})`,
-      query: `${r.name} ko rate kati ho?`,
-    }));
 
     return {
       id: `ai-${Date.now()}`,
       sender: "ai",
-      text: `🏆 **Official LOKI Championship Racket Rates (Live Admin Rates):**\n\n${racketLines}\n\nSabai blades factory pre-assembled sticky ITTF competition rubber sheets sanga aauchhan.\n\n❓ **Tapaiko playstyle kasto chha?**\n• Balance, accurate control, ra spin chahinchha bhane **Dragon 10** perfect ho!\n• Heavy fast offensive topspin smash chahinchha bhane **Dragon 8 Pro** choose garnus!`,
+      text: `Hamro ma main championship bats yo chhan bro:\n${racketLines}\n\nDragon 10 control ra spin ko lagi ekdam balance chha, Dragon 8 Pro fast topspin smash ko lagi best ho. Tapaiko playstyle kasto chha?`,
       timestamp: "Just now",
-      badge: "RACKET COMPARISON",
-      recommendedProducts: rackets.length > 0 ? rackets : inStockProducts.slice(0, 2),
+      badge: "RACKETS",
+      recommendedProducts: rackets.slice(0, 2),
       quickActions: [
-        ...dynamicPills,
+        { label: "🏓 Dragon 10 Carbon Rate", query: "Dragon 10 ko rate kati ho?" },
+        { label: "⚡ Dragon 8 Attack Rate", query: "Dragon 8 Pro ko rate kasto chha?" },
         { label: "🚚 Delivery Charges", query: "Delivery charges kati ho?" },
       ],
     };
   }
 
-  // --------------------------------------------------------
-  // 22. EXPLICIT PRODUCT SEARCH THAT RETURNED NO MATCH
-  // CRITICAL: ONLY triggers if user explicitly asked for a product or price!
-  // (Prevents casual sentences like "kasto xa bro" or "bato ma chu" from triggering not found!)
-  // --------------------------------------------------------
+  // 21. EXPLICIT BUY OR PRODUCT SEARCH WITH NO MATCH
   const hasExplicitBuyOrProductSearch = has(
     /\b(paucha|pauxa|kinna|kinne|buy|order|price|rate|cost|kati\s*parcha|kati\s*parxa|khojeko|khojdai|cha\s*ki\s*nai|chha\s*ki\s*nai|xa\s*ki\s*nai)\b/i
   );
@@ -1240,37 +1030,32 @@ function generateRateGroundedResponse(
     return {
       id: `ai-${Date.now()}`,
       sender: "ai",
-      text: `🔍 **Item Not Found in Store Catalog:**\n\nTapai le khojnu bhayeko saman hamro official LOKI catalog ma bhetiyena (Not Found). Hamro store Nepal ma **Official LOKI (ITTF Approved)** brand ko exclusive authorized partner ho.\n\n⭐ **Tara tapailai chahine ustai high-performance gear yaha available chha:**\n• **Championship Rackets:** LOKI Dragon 10 Carbon (NPR 2,499) & Dragon 8 (NPR 2,199)\n• **Pro Court Shoes:** LOKI Swift Court Shoes (NPR 3,499) with anti-slip gum sole\n• **Match Essentials:** LOKI RXTON 3 Rubber (NPR 1,499) & 3-Star ITTF Balls (NPR 299)\n\nTala hamra top-rated available items check garnus:`,
+      text: `Tapai le khojnu bhayeko yo saman hamro store ma bhetiyena bro. Hamro official LOKI championship items yaha chhan, hernus na:`,
       timestamp: "Just now",
-      badge: "NOT FOUND - STORE FAVORITES",
+      badge: "CATALOG",
       isNotFoundNotice: true,
       recommendedProducts: inStockProducts.slice(0, 2),
       quickActions: [
-        { label: "🏓 Dragon 10 Carbon Rate", query: "Dragon 10 ko rate kati ho?" },
+        { label: "🏓 Dragon 10 Rate", query: "Dragon 10 ko rate kati ho?" },
         { label: "👟 Swift Court Shoes", query: "Show me court shoes rate" },
         { label: "🚚 Delivery Rates", query: "Delivery charges kati ho?" },
-        { label: "🎟️ Any Active Coupons?", query: "Any active coupon codes?" },
       ],
     };
   }
 
-  // --------------------------------------------------------
-  // 22. OPEN-ENDED CONVERSATIONAL FALLBACK (NEVER ACCUSES USER OF FAILED SEARCH!)
-  // Warm, human coach response that keeps the user engaged!
-  // --------------------------------------------------------
+  // 22. OPEN-ENDED CONVERSATIONAL FALLBACK
   return {
     id: `ai-${Date.now()}`,
     sender: "ai",
-    text: `Hajur bro! Ma bujhchhu 😄 Ma LOKI Zone Nepal ko AI Table Tennis Advisor hu.\n\nTapaile masanga normal guff garna saknu hunchha, table tennis equipment choose garna tips magna saknu hunchha, ya Kathmandu showroom bata live rates & delivery charges sodhna saknu hunchha!\n\n🏓 **Tapaiko table tennis journey kasto chaldai chha?** Regular khelnu hunchha ki naya start garne sochirahanu bhayeko chha?`,
+    text: `Hajur bro! Ma bujhchhu 😄 Kunai bat, shoes, balls ya rate ko barema sodhnu chha bhane bhandai garnus na. Tapaiko TT practice kasto chaldai chha?`,
     timestamp: "Just now",
-    badge: "COACH ADVISOR",
+    badge: "COACH",
     recommendedProducts: inStockProducts.slice(0, 2),
     quickActions: [
       { label: "🏓 Dragon 10 Carbon Rate", query: "Dragon 10 ko rate kati ho?" },
       { label: "⚡ Dragon 8 Attack Rate", query: "Dragon 8 Pro ko rate kasto chha?" },
       { label: "👟 Swift Court Shoes", query: "Show me court shoes rate" },
       { label: "💰 Rackets under NPR 2,500", query: "Rackets under NPR 2500" },
-      { label: "🚚 Delivery Charges", query: "Delivery charges kati ho?" },
     ],
   };
 }
