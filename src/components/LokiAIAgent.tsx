@@ -103,6 +103,43 @@ function LokiAIAgentContent() {
     },
   ]);
 
+  // Live sync products, store settings, and coupons from DB on mount and when modal opens
+  useEffect(() => {
+    const syncLiveStore = async () => {
+      try {
+        const pRes = await fetch("/api/products");
+        if (pRes.ok) {
+          const pData = await pRes.json();
+          if (pData.success && Array.isArray(pData.products) && pData.products.length > 0) {
+            useAdminStore.getState().setProducts(pData.products);
+          }
+        }
+      } catch {}
+
+      try {
+        const sRes = await fetch("/api/settings");
+        if (sRes.ok) {
+          const sData = await sRes.json();
+          if (sData.success && sData.settings) {
+            useAdminStore.getState().setStoreSettings(sData.settings);
+          }
+        }
+      } catch {}
+
+      try {
+        const cRes = await fetch("/api/admin/coupons");
+        if (cRes.ok) {
+          const cData = await cRes.json();
+          if (cData.success && Array.isArray(cData.coupons)) {
+            useAdminStore.getState().setCoupons(cData.coupons);
+          }
+        }
+      } catch {}
+    };
+
+    syncLiveStore();
+  }, [isOpen]);
+
   useEffect(() => {
     if (isOpen) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -161,7 +198,10 @@ function LokiAIAgentContent() {
     setIsTyping(true);
 
     setTimeout(() => {
-      const response = generateRateGroundedResponse(query, products, storeSettings, coupons);
+      const liveProducts = useAdminStore.getState().products;
+      const liveSettings = useAdminStore.getState().storeSettings;
+      const liveCoupons = useAdminStore.getState().coupons;
+      const response = generateRateGroundedResponse(query, liveProducts, liveSettings, liveCoupons);
       setMessages((prev) => [...prev, response]);
       setIsTyping(false);
       playSoftChime();
@@ -1137,27 +1177,58 @@ function generateRateGroundedResponse(
   }
 
   // --------------------------------------------------------
-  // 20. GENERAL RACKET / BAT / BLADE COMPARISON & ADVICE
+  // 20. ORDER TRACKING & STATUS
   // --------------------------------------------------------
-  if (has(/\b(racket|bat|blade|blades)\b/i)) {
-    const rackets = inStockProducts.filter((p) => p.category === "Rackets");
+  if (has(/\b(track|tracking|order\s*status|saman\s*kata|kata\s*aipugyo|delivery\s*status|order\s*track)\b/i)) {
     return {
       id: `ai-${Date.now()}`,
       sender: "ai",
-      text: `🏆 **Official LOKI Championship Racket Rates (Live Admin Rates):**\n\n1. **LOKI Dragon 10 Pro:** NPR 2,499 (5-Ply Alpine Wood + Carbon Micro-Mesh, 92 Control, 88 Spin, All-Round Offensive)\n2. **LOKI Dragon 8 Pro:** NPR 2,199 (7-Ply Hybrid Wood, 85 Control, 91 Spin, 89 Speed, Explosive Loop Drives)\n\nBoth blades come pre-assembled with factory-sealed sticky ITTF competition rubber sheets.\n\n❓ **Tapaiko playstyle kasto chha?**\n• Balance, accurate control, ra spin chahinchha bhane **Dragon 10** perfect ho!\n• Heavy fast offensive topspin smash chahinchha bhane **Dragon 8** choose garnus!`,
+      text: `📦 **Live Order Tracking:**\n\nTapaile order garda prapta bhayeko **Phone Number** ya **Order ID** enter garera hamro official tracking page ma live delivery status check garna saknu hunchha!\n\n👉 [Click here to Track Your Order](/order-tracking)\n\nKathmandu Valley bhari 24 hours ma ra Outside Valley 2-3 business days express courier bata deliver hunchha!`,
+      timestamp: "Just now",
+      badge: "ORDER TRACKING",
+      quickActions: [
+        { label: "📦 Go to Order Tracking Page", query: "Order tracking page" },
+        { label: "🚚 Check Delivery Rates", query: "Delivery charges kati ho?" },
+        { label: "📞 Support WhatsApp", query: "Showroom contact number" },
+      ],
+    };
+  }
+
+  // --------------------------------------------------------
+  // 21. GENERAL RACKET / BAT / BLADE COMPARISON & ADVICE
+  // --------------------------------------------------------
+  if (has(/\b(racket|bat|blade|blades)\b/i)) {
+    const rackets = inStockProducts.filter((p) => p.category === "Rackets");
+    const racketLines = rackets
+      .map(
+        (r, i) =>
+          `${i + 1}. **${r.name}:** NPR ${r.price.toLocaleString()}${
+            r.discountPercent ? ` (${r.discountPercent}% OFF)` : ""
+          } — ${r.specs?.playingStyle || r.subtitle || "Championship Grade"}`
+      )
+      .join("\n");
+
+    const dynamicPills = rackets.slice(0, 3).map((r) => ({
+      label: `🏓 ${r.name} (NPR ${r.price.toLocaleString()})`,
+      query: `${r.name} ko rate kati ho?`,
+    }));
+
+    return {
+      id: `ai-${Date.now()}`,
+      sender: "ai",
+      text: `🏆 **Official LOKI Championship Racket Rates (Live Admin Rates):**\n\n${racketLines}\n\nSabai blades factory pre-assembled sticky ITTF competition rubber sheets sanga aauchhan.\n\n❓ **Tapaiko playstyle kasto chha?**\n• Balance, accurate control, ra spin chahinchha bhane **Dragon 10** perfect ho!\n• Heavy fast offensive topspin smash chahinchha bhane **Dragon 8 Pro** choose garnus!`,
       timestamp: "Just now",
       badge: "RACKET COMPARISON",
       recommendedProducts: rackets.length > 0 ? rackets : inStockProducts.slice(0, 2),
       quickActions: [
-        { label: "🏓 Select Dragon 10 (NPR 2,499)", query: "Dragon 10 ko rate kati ho?" },
-        { label: "⚡ Select Dragon 8 (NPR 2,199)", query: "Dragon 8 Pro ko rate kasto chha?" },
+        ...dynamicPills,
         { label: "🚚 Delivery Charges", query: "Delivery charges kati ho?" },
       ],
     };
   }
 
   // --------------------------------------------------------
-  // 21. EXPLICIT PRODUCT SEARCH THAT RETURNED NO MATCH
+  // 22. EXPLICIT PRODUCT SEARCH THAT RETURNED NO MATCH
   // CRITICAL: ONLY triggers if user explicitly asked for a product or price!
   // (Prevents casual sentences like "kasto xa bro" or "bato ma chu" from triggering not found!)
   // --------------------------------------------------------
