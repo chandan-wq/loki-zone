@@ -38,6 +38,56 @@ export interface ChatMessage {
   isNotFoundNotice?: boolean;
 }
 
+// Custom Table Tennis Paddle + AI Sparkle Icon
+function TableTennisAIIcon({ className = "w-6 h-6" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+    >
+      {/* Paddle Rubber Blade */}
+      <circle
+        cx="10"
+        cy="9.5"
+        r="6.5"
+        fill="currentColor"
+        fillOpacity="0.25"
+      />
+      <circle
+        cx="10"
+        cy="9.5"
+        r="6.5"
+        stroke="currentColor"
+        strokeWidth="1.8"
+      />
+      {/* Blade Handle */}
+      <path
+        d="M14.5 14L19.5 19C20.05 19.55 20.05 20.45 19.5 21C18.95 21.55 18.05 21.55 17.5 21L12.5 16"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+      />
+      {/* ITTF 3-Star Yellow Ball */}
+      <circle
+        cx="18.5"
+        cy="5.5"
+        r="2.5"
+        fill="#FACC15"
+        stroke="#FFFFFF"
+        strokeWidth="0.8"
+      />
+      {/* AI Sparkle Star */}
+      <path
+        d="M5 3.5L5.6 4.9L7 5.5L5.6 6.1L5 7.5L4.4 6.1L3 5.5L4.4 4.9L5 3.5Z"
+        fill="#FFFFFF"
+      />
+    </svg>
+  );
+}
+
 // Gentle audio notification chime (Web Audio API)
 function playSoftChime() {
   if (typeof window === "undefined") return;
@@ -222,34 +272,41 @@ function LokiAIAgentContent() {
           isProductPage ? "bottom-20 sm:bottom-6" : "bottom-6"
         }`}
       >
-        {!isOpen && (
-          <button
-            onClick={() => setIsOpen(true)}
-            className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-full bg-neutral-900/95 hover:bg-neutral-900 text-white text-xs font-semibold shadow-xl border border-neutral-700/80 backdrop-blur-md animate-in fade-in slide-in-from-right-4 duration-300 transition hover:scale-105 active:scale-95 group"
-          >
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-            </span>
-            <span className="tracking-tight">Chat with Coach</span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-600 font-bold text-white uppercase tracking-wider">
-              AI
-            </span>
-          </button>
-        )}
-
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className={`relative w-14 h-14 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95 flex items-center justify-center ${
+          className={`group relative flex items-center shadow-[0_12px_36px_-6px_rgba(220,38,38,0.4)] transition-all duration-300 transform hover:scale-105 active:scale-95 border backdrop-blur-xl ${
             isOpen
-              ? "bg-neutral-900 text-white rotate-90"
-              : "bg-gradient-to-tr from-red-600 via-red-500 to-rose-600 text-white ring-4 ring-red-500/25 shadow-red-600/40"
+              ? "p-3.5 rounded-full bg-neutral-950 text-white border-neutral-800 rotate-90"
+              : "pl-2 pr-3.5 sm:pr-4 py-2 rounded-full bg-gradient-to-r from-neutral-950 via-neutral-900 to-neutral-950 text-white border-red-500/40 hover:border-red-500/80 ring-2 ring-red-500/20"
           }`}
-          aria-label="Open AI Rate Advisor"
+          aria-label={isOpen ? "Close AI Coach" : "Open LOKI AI Coach"}
         >
-          {isOpen ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
-          {!isOpen && (
-            <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 border-2 border-white rounded-full animate-pulse" />
+          {isOpen ? (
+            <X className="w-6 h-6 text-white" />
+          ) : (
+            <>
+              {/* Glowing Badge Avatar with Table Tennis Paddle + Ball Icon */}
+              <div className="relative w-10 h-10 rounded-full bg-gradient-to-tr from-red-600 via-red-500 to-rose-600 flex items-center justify-center text-white shadow-md shadow-red-600/40 flex-shrink-0">
+                <TableTennisAIIcon className="w-5 h-5 text-white" />
+                <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 border-2 border-neutral-950" />
+                </span>
+              </div>
+
+              {/* Text Badge (Coach Name + Subtitle) */}
+              <div className="flex flex-col text-left pl-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-black tracking-tight text-white group-hover:text-red-400 transition">
+                    LOKI Coach
+                  </span>
+                  <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-red-600 text-white font-extrabold uppercase tracking-wider">
+                    AI
+                  </span>
+                </div>
+                <span className="text-[10px] text-neutral-400 font-medium">Ask rates &amp; gear</span>
+              </div>
+            </>
           )}
         </button>
       </div>
@@ -260,8 +317,8 @@ function LokiAIAgentContent() {
           {/* Header with Dark Red/Charcoal Gradient */}
           <div className="px-4 py-3.5 bg-gradient-to-r from-neutral-950 via-slate-900 to-red-950 text-white flex items-center justify-between border-b border-neutral-800">
             <div className="flex items-center gap-3">
-              <div className="relative w-9 h-9 rounded-xl bg-gradient-to-tr from-red-600 to-rose-500 flex items-center justify-center text-white shadow-md shadow-red-600/30">
-                <Bot className="w-5 h-5" />
+              <div className="relative w-10 h-10 rounded-2xl bg-gradient-to-tr from-red-600 via-red-500 to-rose-600 flex items-center justify-center text-white shadow-md shadow-red-600/40">
+                <TableTennisAIIcon className="w-5 h-5 text-white" />
                 <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 border-2 border-neutral-950 rounded-full" />
               </div>
               <div>
