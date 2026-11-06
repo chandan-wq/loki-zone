@@ -182,7 +182,7 @@ function LokiAIAgentContent() {
 
   useEffect(() => {
     if (isOpen) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
     }
   }, [messages, isOpen]);
 
@@ -245,7 +245,7 @@ function LokiAIAgentContent() {
       setMessages((prev) => [...prev, response]);
       setIsTyping(false);
       playSoftChime();
-    }, 320);
+    }, 60);
   };
 
   const handleAddToCart = (product: Product) => {
@@ -274,9 +274,9 @@ function LokiAIAgentContent() {
       >
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className={`group relative flex items-center shadow-[0_12px_36px_-6px_rgba(220,38,38,0.4)] transition-all duration-300 transform hover:scale-105 active:scale-95 border backdrop-blur-xl ${
+          className={`group relative flex items-center shadow-[0_12px_36px_-6px_rgba(220,38,38,0.4)] transition-all duration-150 ease-out transform hover:scale-105 active:scale-95 border backdrop-blur-xl ${
             isOpen
-              ? "p-3.5 rounded-full bg-neutral-950 text-white border-neutral-800 rotate-90"
+              ? "p-3.5 rounded-full bg-neutral-950 text-white border-neutral-800"
               : "pl-2 pr-3.5 sm:pr-4 py-2 rounded-full bg-gradient-to-r from-neutral-950 via-neutral-900 to-neutral-950 text-white border-red-500/40 hover:border-red-500/80 ring-2 ring-red-500/20"
           }`}
           aria-label={isOpen ? "Close AI Coach" : "Open LOKI AI Coach"}
@@ -313,7 +313,7 @@ function LokiAIAgentContent() {
 
       {/* Floating Chat Modal Window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-4 sm:right-6 z-50 w-[calc(100vw-32px)] sm:w-[420px] max-h-[640px] h-[80vh] bg-slate-50 rounded-[28px] border border-slate-200/90 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.25)] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed bottom-24 right-4 sm:right-6 z-50 w-[calc(100vw-32px)] sm:w-[420px] max-h-[640px] h-[80vh] bg-slate-50 rounded-[28px] border border-slate-200/90 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.25)] flex flex-col overflow-hidden animate-chat-window">
           {/* Header with Dark Red/Charcoal Gradient */}
           <div className="px-4 py-3.5 bg-gradient-to-r from-neutral-950 via-slate-900 to-red-950 text-white flex items-center justify-between border-b border-neutral-800">
             <div className="flex items-center gap-3">
@@ -391,7 +391,7 @@ function LokiAIAgentContent() {
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex flex-col ${msg.sender === "user" ? "items-end" : "items-start"}`}
+                className={`flex flex-col animate-chat-msg ${msg.sender === "user" ? "items-end" : "items-start"}`}
               >
                 <div
                   className={`max-w-[88%] sm:max-w-[84%] p-3.5 rounded-2xl leading-relaxed text-[13px] ${
@@ -530,10 +530,10 @@ function LokiAIAgentContent() {
             ))}
 
             {isTyping && (
-              <div className="flex items-center gap-1.5 px-3 py-2.5 rounded-2xl bg-white border border-slate-200/90 w-16 shadow-xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" />
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce delay-150" />
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce delay-300" />
+              <div className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-white border border-slate-200/90 w-14 shadow-xs animate-chat-msg">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-chat-dot-1" />
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-chat-dot-2" />
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-chat-dot-3" />
               </div>
             )}
 
