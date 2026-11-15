@@ -90,21 +90,31 @@ export async function POST(req: NextRequest) {
       quantity: Math.max(1, Math.min(10, Number(item.quantity) || 1)),
     }));
 
-    // Server-side verified Clerk authentication
+    // Server-side verified Clerk authentication - Mandatory Customer Login
     let verifiedClerkId: string | null = null;
     let verifiedClerkEmail: string | null = null;
     try {
       const user = await currentUser();
-      if (user) {
+      if (user && user.id) {
         verifiedClerkId = user.id;
         verifiedClerkEmail =
           extractClerkEmail(user)?.toLowerCase().trim() || null;
       }
-    } catch {
-      // Guest checkout allowed
+    } catch (authErr) {
+      console.warn("[Checkout Auth Exception]:", authErr);
     }
 
-    const resolvedEmail = email?.trim() || verifiedClerkEmail || null;
+    if (!verifiedClerkId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Authentication required. Please sign in to complete your order.",
+        },
+        { status: 401 }
+      );
+    }
+
+    const resolvedEmail = verifiedClerkEmail || email?.trim() || null;
 
     // Privileged Supabase Server Client
     const supabase = createAdminClient();
@@ -193,7 +203,7 @@ export async function POST(req: NextRequest) {
       total: result.total,
       duplicate: result.duplicate || false,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     if (err && typeof err === "object" && "digest" in err) {
       throw err;
     }

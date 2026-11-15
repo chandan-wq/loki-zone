@@ -7,9 +7,6 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import {
   ShieldCheck,
-  CheckCircle2,
-  Truck,
-  CreditCard,
   Lock,
   ArrowLeft,
   Tag,
@@ -21,7 +18,7 @@ import { extractClerkEmail } from "@/lib/adminAuth";
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { user, isLoaded: isUserLoaded } = useUser();
+  const { user, isLoaded: isUserLoaded, isSignedIn } = useUser();
   const {
     items,
     getCartTotal,
@@ -61,17 +58,25 @@ export default function CheckoutPage() {
     address: "",
     notes: "Please call before delivery",
   });
+  const [syncedUserId, setSyncedUserId] = useState<string | null>(null);
 
-  // Automatically sync authenticated user details when Clerk session loads
-  useEffect(() => {
-    if (!isUserLoaded || !user) return;
+  // Automatically sync authenticated user details when Clerk session loads (during render)
+  if (user && user.id !== syncedUserId) {
+    setSyncedUserId(user.id);
     setFormData((prev) => ({
       ...prev,
       fullName: prev.fullName || userFullName,
       email: prev.email || userEmail,
       phone: prev.phone || (user.phoneNumbers?.[0]?.phoneNumber ?? ""),
     }));
-  }, [isUserLoaded, user, userFullName, userEmail]);
+  }
+
+  // Redirect unauthenticated visitors to login immediately
+  useEffect(() => {
+    if (isUserLoaded && !isSignedIn) {
+      router.replace("/login?redirect_url=/checkout");
+    }
+  }, [isUserLoaded, isSignedIn, router]);
 
   const subtotal = getCartTotal();
   const discountAmount = getDiscountAmount(subtotal);
@@ -223,6 +228,11 @@ export default function CheckoutPage() {
       const data = await res.json();
 
       if (!res.ok || !data.success) {
+        if (res.status === 401) {
+          alert("Your session has expired. Please sign in to complete your order.");
+          router.replace("/login?redirect_url=/checkout");
+          return;
+        }
         throw new Error(data.error || "Failed to process order.");
       }
 
@@ -262,42 +272,6 @@ export default function CheckoutPage() {
       };
       createOrder(newOrder);
 
-      // Asynchronous notification fallback trigger from browser
-      fetch("/api/orders/notify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: orderId,
-          customerName: formData.fullName,
-          phone: formData.phone,
-          email: formData.email,
-          city: formData.city,
-          address: formData.address,
-          subtotal: data.subtotal,
-          deliveryFee: data.deliveryFee,
-          total: finalTotal,
-          paymentMethod: paymentMethodMap[paymentMethod],
-          status: "Pending Confirmation",
-          date: new Date().toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          }),
-          items: items.map((i) => ({
-            id: i.id,
-            name: i.name,
-            price: i.price,
-            quantity: i.quantity,
-            image: i.image,
-          })),
-          courierNote: formData.notes
-            ? `${formData.notes} | Preferred City: ${formData.city}`
-            : `Delivery to ${formData.city}`,
-        }),
-      }).catch((notifyErr) => {
-        console.warn("[Checkout] Client notification fallback caught:", notifyErr);
-      });
-
       // 2. Increment coupon usage if used
       if (appliedCoupon) {
         incrementCouponUsage(appliedCoupon.code);
@@ -323,6 +297,18 @@ export default function CheckoutPage() {
       setIsSubmitting(false);
     }
   };
+
+  // Guard checkout view until customer authentication is fully verified
+  if (!isUserLoaded || !isSignedIn || !user) {
+    return (
+      <div className="min-h-screen bg-gray-50/70 flex flex-col items-center justify-center p-4">
+        <div className="w-10 h-10 border-2 border-red-600 border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-xs font-bold text-gray-700 tracking-wide uppercase">
+          Verifying secure customer checkout...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-50/60 min-h-screen py-10">

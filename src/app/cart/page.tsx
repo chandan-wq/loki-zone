@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useUser } from "@clerk/nextjs";
 import {
   ShoppingBag,
   Trash2,
@@ -19,6 +20,7 @@ import { useCartStore } from "@/store/useCartStore";
 import { useAdminStore } from "@/store/useAdminStore";
 
 export default function CartPage() {
+  const { isSignedIn } = useUser();
   const {
     items,
     updateQuantity,
@@ -401,10 +403,10 @@ export default function CartPage() {
                 </dl>
 
                 <Link
-                  href="/checkout"
+                  href={isSignedIn ? "/checkout" : "/login?redirect_url=/checkout"}
                   className="w-full py-3.5 sm:py-4 bg-red-600 hover:bg-red-700 text-white rounded-full font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition shadow-xl shadow-red-600/30 text-center"
                 >
-                  <span>Proceed to Checkout</span>
+                  <span>{isSignedIn ? "Proceed to Checkout" : "Sign In to Checkout"}</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
 

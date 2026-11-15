@@ -159,10 +159,16 @@ function LoginForm() {
     setError("");
     setLoadingGoogle(true);
     try {
+      const redirectParam = searchParams.get("redirect_url");
+      const targetDestination =
+        redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")
+          ? redirectParam
+          : "/";
+
       await signIn.authenticateWithRedirect({
         strategy: "oauth_google",
         redirectUrl: "/sso-callback",
-        redirectUrlComplete: "/",
+        redirectUrlComplete: targetDestination,
       });
     } catch (err: unknown) {
       const clerkError =

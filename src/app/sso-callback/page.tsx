@@ -12,8 +12,8 @@ export default function SSOCallbackPage() {
         <p className="text-xs text-gray-500">Completing secure authentication. Please wait a moment.</p>
         <Suspense fallback={null}>
           <AuthenticateWithRedirectCallback
-            signInForceRedirectUrl="/"
-            signUpForceRedirectUrl="/"
+            signInFallbackRedirectUrl="/"
+            signUpFallbackRedirectUrl="/"
           />
         </Suspense>
       </div>

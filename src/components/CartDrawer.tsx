@@ -3,11 +3,13 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useUser } from "@clerk/nextjs";
 import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight, ShieldCheck, Tag } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import { useAdminStore } from "@/store/useAdminStore";
 
 export default function CartDrawer() {
+  const { isSignedIn } = useUser();
   const {
     items,
     isCartOpen,
@@ -340,11 +342,11 @@ export default function CartDrawer() {
               {/* Action buttons */}
               <div className="pt-2 space-y-2">
                 <Link
-                  href="/checkout"
+                  href={isSignedIn ? "/checkout" : "/login?redirect_url=/checkout"}
                   onClick={closeCart}
                   className="w-full py-3.5 bg-black hover:bg-neutral-800 text-white rounded-full font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition shadow-lg active:scale-[0.99]"
                 >
-                  Proceed to Checkout <ArrowRight className="w-4 h-4" />
+                  {isSignedIn ? "Proceed to Checkout" : "Sign In to Checkout"} <ArrowRight className="w-4 h-4" />
                 </Link>
 
                 <Link
