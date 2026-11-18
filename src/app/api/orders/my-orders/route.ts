@@ -4,8 +4,6 @@ import { createClerkClient, verifyToken } from "@clerk/backend";
 import { extractClerkEmail } from "@/lib/adminAuth";
 import { createAdminClient } from "@/lib/supabase/server";
 
-export const dynamic = "force-dynamic";
-
 export async function GET(req: NextRequest) {
   try {
     let resolvedUserId: string | null = null;
