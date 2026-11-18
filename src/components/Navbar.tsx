@@ -292,12 +292,15 @@ export default function Navbar() {
               {/* Distinct Dedicated Custom Combo Button */}
               <Link
                 href="/custom-combo"
-                className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-full bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-700 hover:to-rose-700 text-white font-extrabold text-[11px] sm:text-xs shadow-md shadow-red-600/25 hover:shadow-red-600/40 hover:scale-105 active:scale-95 transition-all group shrink-0 border border-red-500/30"
+                className="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-1 sm:px-3 sm:py-1.5 rounded-full bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-700 hover:to-rose-700 text-white font-extrabold text-[10px] sm:text-xs shadow-sm shadow-red-600/25 hover:shadow-red-600/40 hover:scale-105 active:scale-95 transition-all group shrink-0 border border-red-500/30"
                 title="Build Custom Combo - Save 10%"
               >
-                <Sparkles className="w-3.5 h-3.5 text-amber-300 fill-amber-300 animate-pulse shrink-0" />
-                <span className="tracking-tight whitespace-nowrap">Custom Combo</span>
-                <span className="bg-black/25 text-amber-200 px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider hidden xs:inline-block">
+                <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-300 fill-amber-300 animate-pulse shrink-0" />
+                <span className="tracking-tight whitespace-nowrap">
+                  <span className="sm:hidden">Combo</span>
+                  <span className="hidden sm:inline">Custom Combo</span>
+                </span>
+                <span className="bg-black/25 text-amber-200 px-1 py-0.2 rounded text-[8px] sm:text-[9px] font-black uppercase tracking-wider">
                   -10%
                 </span>
               </Link>
