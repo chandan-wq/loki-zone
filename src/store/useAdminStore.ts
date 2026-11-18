@@ -1383,7 +1383,7 @@ export const useAdminStore = create<AdminState>()(
     })),
 }),
 {
-  name: "loki_admin_store_v7",
+  name: "loki_admin_store_v8",
   storage: createJSONStorage(() => localStorage),
 }
 )

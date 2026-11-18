@@ -94,11 +94,14 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { name, email, password } = body as {
+    const { name, email, password, role } = body as {
       name: string;
       email: string;
       password?: string;
+      role?: "main" | "normal";
     };
+
+    const targetRole: "main" | "normal" = role === "main" ? "main" : "normal";
 
     if (!name || typeof name !== "string" || name.trim().length < 2) {
       return NextResponse.json(
@@ -145,15 +148,23 @@ export async function POST(req: NextRequest) {
         const existingUser = existingUsers.data[0];
         clerkUserId = existingUser.id;
 
-        // Update existing user with the new password and assign role: normal (staff)
+        // Update existing user with the new password and assign role
         await clerk.users.updateUser(existingUser.id, {
           password: cleanPassword,
           firstName: name.trim(),
-          publicMetadata: {
-            ...existingUser.publicMetadata,
-            role: "normal",
-          },
         });
+        try {
+          if (typeof (clerk.users as any).updateUserMetadata === "function") {
+            await (clerk.users as any).updateUserMetadata(existingUser.id, {
+              publicMetadata: {
+                ...existingUser.publicMetadata,
+                role: targetRole,
+              },
+            });
+          }
+        } catch (metaErr) {
+          console.warn("[Clerk Update Metadata Warning]:", metaErr);
+        }
       } else {
         // 2. Create new Clerk user with the email and password chosen by Admin
         const newUser = await clerk.users.createUser({
@@ -161,7 +172,7 @@ export async function POST(req: NextRequest) {
           password: cleanPassword,
           firstName: name.trim(),
           publicMetadata: {
-            role: "normal",
+            role: targetRole,
           },
           skipPasswordChecks: true,
         });
@@ -191,7 +202,7 @@ export async function POST(req: NextRequest) {
         clerk_user_id: clerkUserId,
         name: name.trim(),
         email: cleanEmail,
-        role: "normal",
+        role: targetRole,
         status: "active",
         created_at: new Date().toISOString(),
       })
@@ -208,12 +219,12 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Staff account "${name.trim()}" created successfully. They can now log in with their email and password!`,
+      message: `${targetRole === "main" ? "Main Admin" : "Staff"} account "${name.trim()}" created successfully. They can now log in with their email and password!`,
       staff: {
         id: staffId,
         name: name.trim(),
         email: cleanEmail,
-        role: "normal",
+        role: targetRole,
         status: "active",
         lastLogin: "Never",
       },

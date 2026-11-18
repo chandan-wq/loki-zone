@@ -173,31 +173,14 @@ export default function AdminDashboardPage() {
   const isMaster = adminRole === "main";
   const isNormal = adminRole === "normal";
   const loggedInEmail = extractClerkEmail(user)?.toLowerCase().trim() || "";
-  const isActualMaster = Boolean(loggedInEmail && MAIN_ADMIN_EMAILS.includes(loggedInEmail));
+  const isActualMaster =
+    adminRole === "main" ||
+    Boolean(loggedInEmail && MAIN_ADMIN_EMAILS.includes(loggedInEmail));
 
-  // Sanitize active staff to ensure removed legacy entries never render
+  // Sanitize active staff - only filter out dummy legacy hardcoded account if present
   const activeStaffMembers = useMemo(() => {
-    return (staffMembers || []).filter(
-      (s) =>
-        s.email?.toLowerCase().trim() !== "joshi.ritiz@gmail.com" &&
-        !s.email?.toLowerCase().includes("ritiz") &&
-        s.id !== "owner-ritiz"
-    );
+    return (staffMembers || []).filter((s) => s.id !== "owner-ritiz");
   }, [staffMembers]);
-
-  // Clean up any legacy persisted entry from local state
-  useEffect(() => {
-    if (staffMembers.some((s) => s.email?.toLowerCase().includes("ritiz") || s.id === "owner-ritiz")) {
-      setStaffMembers(
-        staffMembers.filter(
-          (s) =>
-            s.email?.toLowerCase().trim() !== "joshi.ritiz@gmail.com" &&
-            !s.email?.toLowerCase().includes("ritiz") &&
-            s.id !== "owner-ritiz"
-        )
-      );
-    }
-  }, [staffMembers, setStaffMembers]);
 
   // Helper to obtain server-verified admin authorization headers
   const getAdminAuthHeaders = async (): Promise<Record<string, string>> => {
