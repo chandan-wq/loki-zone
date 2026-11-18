@@ -11,10 +11,12 @@ import {
   Menu,
   X,
   ChevronDown,
+  ChevronRight,
   User,
   LogOut,
   Package,
   ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import { useAdminStore } from "@/store/useAdminStore";
@@ -128,6 +130,12 @@ export default function Navbar() {
   const navLinks = [
     { name: "Home", href: "/", active: true },
     {
+      name: "Custom Combo",
+      href: "/custom-combo",
+      badge: "Save 10%",
+      highlight: true,
+    },
+    {
       name: "Shop",
       href: "/category/all",
       hasDropdown: true,
@@ -234,13 +242,23 @@ export default function Navbar() {
                 >
                   <Link
                     href={link.href}
-                    className={`inline-flex items-center gap-1 px-3.5 py-2 text-sm font-semibold transition ${
-                      link.active
+                    className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold transition ${
+                      link.highlight
+                        ? "text-red-600 hover:text-red-700 font-bold"
+                        : link.active
                         ? "text-gray-950"
                         : "text-gray-600 hover:text-gray-950"
                     }`}
                   >
+                    {link.highlight && (
+                      <Sparkles className="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0 animate-pulse" />
+                    )}
                     <span>{link.name}</span>
+                    {link.badge && (
+                      <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-red-100 text-red-600 border border-red-200">
+                        {link.badge}
+                      </span>
+                    )}
                     {link.hasDropdown && (
                       <ChevronDown className="w-3.5 h-3.5 text-gray-400 group-hover:text-gray-700 transition" />
                     )}
@@ -269,8 +287,21 @@ export default function Navbar() {
               ))}
             </nav>
 
-            {/* Right Icons: Search, Admin Panel, Cart */}
-            <div className="flex items-center space-x-2 sm:space-x-3">
+            {/* Right Icons: Custom Combo CTA, Search, Admin Panel, Cart */}
+            <div className="flex items-center space-x-1.5 sm:space-x-3">
+              {/* Distinct Dedicated Custom Combo Button */}
+              <Link
+                href="/custom-combo"
+                className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-full bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-700 hover:to-rose-700 text-white font-extrabold text-[11px] sm:text-xs shadow-md shadow-red-600/25 hover:shadow-red-600/40 hover:scale-105 active:scale-95 transition-all group shrink-0 border border-red-500/30"
+                title="Build Custom Combo - Save 10%"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-300 fill-amber-300 animate-pulse shrink-0" />
+                <span className="tracking-tight whitespace-nowrap">Custom Combo</span>
+                <span className="bg-black/25 text-amber-200 px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider hidden xs:inline-block">
+                  -10%
+                </span>
+              </Link>
+
               {/* Search Icon */}
               <button
                 onClick={() => setIsSearchOpen(true)}
@@ -507,6 +538,29 @@ export default function Navbar() {
 
               {/* Scrollable Navigation Body */}
               <div className="flex-1 overflow-y-auto px-5 py-4 space-y-2">
+                {/* Featured Custom Combo Mobile Banner */}
+                <Link
+                  href="/custom-combo"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-between p-3.5 bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white rounded-2xl font-bold text-sm shadow-md shadow-red-600/20 mb-3 group"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center shrink-0">
+                      <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+                    </div>
+                    <div>
+                      <div className="font-extrabold text-sm flex items-center gap-1.5">
+                        <span>Custom Combo Studio</span>
+                        <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-amber-400 text-slate-950">
+                          -10%
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-white/80 font-normal">Build your personalized set</div>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-white/80 group-hover:translate-x-0.5 transition-transform" />
+                </Link>
+
                 {navLinks.map((link) => {
                   const isExpanded = mobileExpandedCategory === link.name;
                   return (

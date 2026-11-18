@@ -106,6 +106,20 @@ export async function POST(req: NextRequest) {
 
     const supabase = createAdminClient();
 
+    const isPerformanceEquipment = ["Rackets", "Bat", "Rubber", "Balls", "Ball"].includes(category);
+    const sanitizedSpecs: Record<string, any> = {
+      ...(specs && typeof specs === "object" ? specs : {}),
+      ...(video ? { video } : {}),
+    };
+
+    if (!isPerformanceEquipment) {
+      delete sanitizedSpecs.speed;
+      delete sanitizedSpecs.spin;
+      delete sanitizedSpecs.control;
+      delete sanitizedSpecs.bladeConstruction;
+      delete sanitizedSpecs.rubberType;
+    }
+
     const payload = {
       id: productId,
       name: name.trim(),
@@ -122,10 +136,7 @@ export async function POST(req: NextRequest) {
       stock_count: numStock,
       in_stock: inStock,
       tags: Array.isArray(tags) ? tags : [],
-      specs: {
-        ...(specs && typeof specs === "object" ? specs : {}),
-        ...(video ? { video } : {}),
-      },
+      specs: sanitizedSpecs,
       is_active: isActive !== undefined ? Boolean(isActive) : true,
       updated_at: new Date().toISOString(),
     };

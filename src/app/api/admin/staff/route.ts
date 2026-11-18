@@ -28,20 +28,12 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Default permanent Main Administrators
+    // Default permanent Main Administrator
     const permanentOwners = [
       {
         id: "owner-chandan",
         name: "Chandan Thakur",
         email: "chandanthakurchandan935@gmail.com",
-        role: "main",
-        status: "active",
-        lastLogin: "Active Now",
-      },
-      {
-        id: "owner-ritiz",
-        name: "Ritiz Joshi",
-        email: "joshi.ritiz@gmail.com",
         role: "main",
         status: "active",
         lastLogin: "Active Now",
@@ -132,8 +124,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const clerkKey =
-      process.env.CLERK_SECRET_KEY || "sk_test_q7R5ZHEY9dwMoiFmTrtmQcOfAUcvKeSgBH8U6Hvkgz";
+    const clerkKey = process.env.CLERK_SECRET_KEY;
+    if (!clerkKey) {
+      return NextResponse.json(
+        { success: false, error: "Server authentication service configuration missing." },
+        { status: 500 }
+      );
+    }
     const clerk = createClerkClient({ secretKey: clerkKey });
 
     let clerkUserId: string | null = null;
@@ -244,8 +241,10 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { id, status, password } = body as {
+    const { id, name, role, status, password } = body as {
       id: string;
+      name?: string;
+      role?: "main" | "normal";
       status?: "active" | "inactive";
       password?: string;
     };
@@ -271,57 +270,71 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    // Protect owners from deactivation
-    if (MAIN_ADMIN_EMAILS.includes((staff.email || "").toLowerCase())) {
+    // Protect active signed-in admin from deactivating or demoting themselves
+    if (
+      (staff.email || "").toLowerCase().trim() ===
+      (adminSession.email || "").toLowerCase().trim() &&
+      (status === "inactive" || role === "normal")
+    ) {
       return NextResponse.json(
-        { success: false, error: "Cannot modify permanent Main Admin accounts." },
+        { success: false, error: "You cannot demote or deactivate your own active session." },
         { status: 400 }
       );
     }
 
     const updates: Record<string, any> = {};
-    if (status) {
+    if (name && typeof name === "string" && name.trim().length >= 2) {
+      updates.name = name.trim();
+    }
+    if (role && (role === "main" || role === "normal")) {
+      updates.role = role;
+    }
+    if (status && (status === "active" || status === "inactive")) {
       updates.status = status;
     }
 
-    const { error: updateErr } = await supabase
-      .from("staff_members")
-      .update(updates)
-      .eq("id", id);
+    if (Object.keys(updates).length > 0) {
+      const { error: updateErr } = await supabase
+        .from("staff_members")
+        .update(updates)
+        .eq("id", id);
 
-    if (updateErr) {
-      return NextResponse.json({ success: false, error: updateErr.message }, { status: 500 });
+      if (updateErr) {
+        return NextResponse.json({ success: false, error: updateErr.message }, { status: 500 });
+      }
     }
 
-    // Sync role status or password to Clerk
-    const clerkKey =
-      process.env.CLERK_SECRET_KEY || "sk_test_q7R5ZHEY9dwMoiFmTrtmQcOfAUcvKeSgBH8U6Hvkgz";
-    const clerk = createClerkClient({ secretKey: clerkKey });
-
-    if (staff.clerk_user_id) {
+    // Sync role, name, status, or password to Clerk
+    const clerkKey = process.env.CLERK_SECRET_KEY;
+    if (clerkKey && staff.clerk_user_id) {
+      const clerk = createClerkClient({ secretKey: clerkKey });
       try {
         const clerkUpdate: Record<string, any> = {};
-        if (status) {
-          clerkUpdate.publicMetadata = {
-            role: status === "active" ? "normal" : null,
-          };
+        if (updates.name) {
+          clerkUpdate.firstName = updates.name;
         }
         if (password && password.trim().length >= 8) {
           clerkUpdate.password = password.trim();
         }
 
-        if (Object.keys(clerkUpdate).length > 0) {
-          await clerk.users.updateUser(staff.clerk_user_id, clerkUpdate);
-        }
+        const effectiveRole = updates.role || staff.role || "normal";
+        const effectiveStatus = updates.status || staff.status || "active";
+        clerkUpdate.publicMetadata = {
+          role: effectiveStatus === "active" ? effectiveRole : null,
+        };
+
+        await clerk.users.updateUser(staff.clerk_user_id, clerkUpdate);
       } catch (clerkSyncErr) {
-        console.warn("[Clerk Staff Status Sync Warning]:", clerkSyncErr);
+        console.warn("[Clerk Staff Update Sync Warning]:", clerkSyncErr);
       }
     }
 
     return NextResponse.json({
       success: true,
       id,
-      status,
+      name: updates.name || staff.name,
+      role: updates.role || staff.role,
+      status: updates.status || staff.status,
       message: `Staff member updated successfully.`,
     });
   } catch (err) {
@@ -367,22 +380,31 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    if (MAIN_ADMIN_EMAILS.includes((staff.email || "").toLowerCase())) {
+    // Prevent admin from deleting their own currently signed-in account
+    if (
+      (staff.email || "").toLowerCase().trim() ===
+      (adminSession.email || "").toLowerCase().trim()
+    ) {
       return NextResponse.json(
-        { success: false, error: "Cannot delete permanent Main Admin accounts." },
+        { success: false, error: "You cannot delete your own active administrator account." },
         { status: 400 }
       );
     }
 
-    // Revoke admin role in Clerk
+    // Completely remove or revoke user in Clerk so email can be reused/re-registered
     if (staff.clerk_user_id) {
       try {
-        const clerkKey =
-          process.env.CLERK_SECRET_KEY || "sk_test_q7R5ZHEY9dwMoiFmTrtmQcOfAUcvKeSgBH8U6Hvkgz";
-        const clerk = createClerkClient({ secretKey: clerkKey });
-        await clerk.users.updateUser(staff.clerk_user_id, {
-          publicMetadata: { role: null },
-        });
+        const clerkKey = process.env.CLERK_SECRET_KEY;
+        if (clerkKey) {
+          const clerk = createClerkClient({ secretKey: clerkKey });
+          try {
+            await clerk.users.deleteUser(staff.clerk_user_id);
+          } catch {
+            await clerk.users.updateUser(staff.clerk_user_id, {
+              publicMetadata: { role: null },
+            });
+          }
+        }
       } catch (clerkRevokeErr) {
         console.warn("[Clerk Staff Revoke Role Warning]:", clerkRevokeErr);
       }

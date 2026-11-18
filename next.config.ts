@@ -75,6 +75,21 @@ const nextConfig: NextConfig = {
         destination: "/order-tracking",
         permanent: false,
       },
+      {
+        source: "/combo",
+        destination: "/custom-combo",
+        permanent: false,
+      },
+      {
+        source: "/custom",
+        destination: "/custom-combo",
+        permanent: false,
+      },
+      {
+        source: "/combo-builder",
+        destination: "/custom-combo",
+        permanent: false,
+      },
     ];
   },
 };

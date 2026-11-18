@@ -58,16 +58,31 @@ export async function getVerifiedAdmin(req?: NextRequest): Promise<{
     if (user) {
       const email = extractClerkEmail(user);
       const role = await verifyEmailRoleWithDatabase(email, user.publicMetadata?.role);
-      if (role) {
-        return { authorized: true, email, role, userId: user.id };
-      }
+      return {
+        authorized: Boolean(role),
+        email,
+        role: role || null,
+        userId: user.id,
+      };
     }
-  } catch (err) {
+  } catch (err: unknown) {
+    if (
+      err &&
+      typeof err === "object" &&
+      "digest" in err &&
+      typeof (err as { digest: unknown }).digest === "string" &&
+      (err as { digest: string }).digest.startsWith("NEXT_")
+    ) {
+      throw err;
+    }
     // Continue to fallback strategies
   }
 
-  const clerkKey =
-    process.env.CLERK_SECRET_KEY || "sk_test_q7R5ZHEY9dwMoiFmTrtmQcOfAUcvKeSgBH8U6Hvkgz";
+  const clerkKey = process.env.CLERK_SECRET_KEY;
+  if (!clerkKey) {
+    console.warn("[getVerifiedAdmin] Server configuration error: CLERK_SECRET_KEY is missing.");
+    return { authorized: false, email: null, role: null, userId: null };
+  }
 
   // 2. Try Clerk auth() session claims
   try {
@@ -78,12 +93,25 @@ export async function getVerifiedAdmin(req?: NextRequest): Promise<{
       if (user) {
         const email = extractClerkEmail(user);
         const role = await verifyEmailRoleWithDatabase(email, user.publicMetadata?.role);
-        if (role) {
-          return { authorized: true, email, role, userId: user.id };
-        }
+        return {
+          authorized: Boolean(role),
+          email,
+          role: role || null,
+          userId: user.id,
+        };
       }
+      return { authorized: false, email: null, role: null, userId };
     }
-  } catch (err) {
+  } catch (err: unknown) {
+    if (
+      err &&
+      typeof err === "object" &&
+      "digest" in err &&
+      typeof (err as { digest: unknown }).digest === "string" &&
+      (err as { digest: string }).digest.startsWith("NEXT_")
+    ) {
+      throw err;
+    }
     // Continue to bearer token check
   }
 
@@ -104,10 +132,14 @@ export async function getVerifiedAdmin(req?: NextRequest): Promise<{
             if (user) {
               const email = extractClerkEmail(user);
               const role = await verifyEmailRoleWithDatabase(email, user.publicMetadata?.role);
-              if (role) {
-                return { authorized: true, email, role, userId: user.id };
-              }
+              return {
+                authorized: Boolean(role),
+                email,
+                role: role || null,
+                userId: user.id,
+              };
             }
+            return { authorized: false, email: null, role: null, userId: sub };
           }
         } catch (err) {
           console.warn("[getVerifiedAdmin] Bearer token verification error:", err);

@@ -1,10 +1,15 @@
 import { redirect } from "next/navigation";
+import { getVerifiedAdmin } from "@/lib/adminAuthServer";
 
 /**
- * /admin/login → redirect to the branded login page.
- * Do NOT redirect to /sign-in (the unbranded Clerk portal).
- * The branded /login page handles Clerk sign-in via useSignIn().
+ * /admin/login entry point.
+ * If already an authorized administrator, redirect directly to /admin.
+ * Otherwise redirect to the branded login page.
  */
-export default function AdminLoginPage() {
+export default async function AdminLoginPage() {
+  const adminSession = await getVerifiedAdmin();
+  if (adminSession.authorized) {
+    redirect("/admin");
+  }
   redirect("/login?redirect_url=/admin");
 }

@@ -224,6 +224,11 @@ export default function CartPage() {
                             </>
                           )}
                         </div>
+                        {item.isCombo && item.comboItems && (
+                          <div className="mt-1 text-xs text-emerald-700 font-semibold bg-emerald-50/80 px-2.5 py-1 rounded-lg border border-emerald-200/60 inline-block">
+                            Includes: {item.comboItems.map((c) => `${c.quantity}x ${c.name}`).join(" + ")}
+                          </div>
+                        )}
                         <div className="mt-1 text-xs font-extrabold text-gray-900">
                           NPR {item.price.toLocaleString()}
                         </div>

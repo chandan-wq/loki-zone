@@ -82,7 +82,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <ClerkProvider
-          publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "pk_test_bWlnaHR5LWNhdC0yNzc4LmNsZXJrLmFjY291bnRzLmRldiQ"}
+          publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
           signInUrl="/login"
           signUpUrl="/register"
           signInFallbackRedirectUrl="/"

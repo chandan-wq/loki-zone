@@ -29,6 +29,8 @@ import {
   ThumbsUp,
   Play,
   Video,
+  Lock,
+  ShieldAlert,
 } from "lucide-react";
 import { PRODUCTS, Product } from "@/data/products";
 import { useCartStore } from "@/store/useCartStore";
@@ -125,7 +127,18 @@ export default function ProductDetailClient({ productId }: { productId: string }
   const [deliveryCity, setDeliveryCity] = useState("Kathmandu");
 
   // Reviews System
-  const [reviewsList, setReviewsList] = useState([
+  const [reviewsList, setReviewsList] = useState<
+    {
+      id: string;
+      name: string;
+      city: string;
+      role?: string;
+      rating: number;
+      date: string;
+      comment: string;
+      verified?: boolean;
+    }[]
+  >([
     {
       id: "rev-1",
       name: "Rabin Shrestha",
@@ -134,6 +147,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
       rating: 5,
       date: "2 days ago",
       comment: "Incredible build quality and grip! The feedback on topspin loop rallies is crisp and predictable. Arrived inside Kathmandu in less than 24 hours.",
+      verified: true,
     },
     {
       id: "rev-2",
@@ -143,6 +157,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
       rating: 5,
       date: "1 week ago",
       comment: "100% authentic LOKI gear. Very satisfied with the weight balance and edge finish. Recommended to all table tennis academy players in Nepal.",
+      verified: true,
     },
     {
       id: "rev-3",
@@ -152,47 +167,148 @@ export default function ProductDetailClient({ productId }: { productId: string }
       rating: 5,
       date: "2 weeks ago",
       comment: "Super fast courier delivery to Pokhara. Packaging was secure with shockproof bubble wrap. Product exceeds expectations!",
+      verified: true,
     },
   ]);
+  const [reviewEligibility, setReviewEligibility] = useState<{
+    isLoggedIn: boolean;
+    isAdmin: boolean;
+    isVerifiedBuyer: boolean;
+    canReview: boolean;
+    reviewerName: string | null;
+  }>({
+    isLoggedIn: false,
+    isAdmin: false,
+    isVerifiedBuyer: false,
+    canReview: false,
+    reviewerName: null,
+  });
   const [isWritingReview, setIsWritingReview] = useState(false);
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
   const [newReview, setNewReview] = useState({
     name: "",
     city: "Kathmandu",
     rating: 5,
-    role: "Table Tennis Enthusiast",
+    role: "Verified Player",
     comment: "",
   });
   const [reviewSuccess, setReviewSuccess] = useState(false);
 
-  const handleAddReview = (e: React.FormEvent) => {
+  // Fetch reviews & eligibility for this product
+  useEffect(() => {
+    let active = true;
+    async function loadProductReviews() {
+      try {
+        const res = await fetch(`/api/reviews?productId=${encodeURIComponent(productId)}`);
+        const data = await res.json();
+        if (active && data.success) {
+          if (Array.isArray(data.reviews) && data.reviews.length > 0) {
+            setReviewsList(
+              data.reviews.map((r: any) => ({
+                id: r.id,
+                name: r.playerName,
+                city: r.roleOrClub?.includes("•") ? r.roleOrClub.split("•")[1].trim() : "Nepal",
+                role: r.roleOrClub,
+                rating: r.rating || 5,
+                date: r.date,
+                comment: r.comment,
+                verified: r.verified !== false,
+              }))
+            );
+          }
+          if (data.eligibility) {
+            setReviewEligibility(data.eligibility);
+            if (data.eligibility.reviewerName) {
+              setNewReview((prev) => ({
+                ...prev,
+                name: prev.name || data.eligibility.reviewerName || "",
+                role: data.eligibility.isAdmin
+                  ? "Official Store Administrator"
+                  : "Verified Equipment Purchaser",
+              }));
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("[Product Reviews Load Warning]:", err);
+      }
+    }
+    loadProductReviews();
+    return () => {
+      active = false;
+    };
+  }, [productId]);
+
+  const handleAddReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newReview.name.trim() || !newReview.comment.trim()) return;
 
-    setReviewsList((prev) => [
-      {
-        id: `rev-${Date.now()}`,
-        name: newReview.name.trim(),
-        city: newReview.city,
-        role: newReview.role,
-        rating: newReview.rating,
-        date: "Just now",
-        comment: newReview.comment.trim(),
-      },
-      ...prev,
-    ]);
+    if (!reviewEligibility.canReview) {
+      setReviewError(
+        !reviewEligibility.isLoggedIn
+          ? "Please sign in to write a review."
+          : "Only verified purchasers who ordered this equipment (or store administrators) are permitted to submit reviews."
+      );
+      return;
+    }
 
-    setNewReview({
-      name: "",
-      city: "Kathmandu",
-      rating: 5,
-      role: "Table Tennis Enthusiast",
-      comment: "",
-    });
-    setReviewSuccess(true);
-    setTimeout(() => {
-      setReviewSuccess(false);
-      setIsWritingReview(false);
-    }, 2000);
+    try {
+      setReviewSubmitting(true);
+      setReviewError(null);
+      const res = await fetch("/api/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId,
+          playerName: newReview.name.trim(),
+          roleOrClub: newReview.role,
+          rating: newReview.rating,
+          equipment: product.name,
+          comment: newReview.comment.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setReviewError(data.error || "Failed to submit review.");
+        return;
+      }
+
+      const rev = data.review;
+      setReviewsList((prev) => [
+        {
+          id: rev.id,
+          name: rev.playerName,
+          city: newReview.city || "Kathmandu",
+          role: rev.roleOrClub,
+          rating: rev.rating,
+          date: "Just now",
+          comment: rev.comment,
+          verified: true,
+        },
+        ...prev,
+      ]);
+
+      setNewReview({
+        name: reviewEligibility.reviewerName || "",
+        city: "Kathmandu",
+        rating: 5,
+        role: reviewEligibility.isAdmin
+          ? "Official Store Administrator"
+          : "Verified Equipment Purchaser",
+        comment: "",
+      });
+      setReviewSuccess(true);
+      setTimeout(() => {
+        setReviewSuccess(false);
+        setIsWritingReview(false);
+      }, 2500);
+    } catch (err: any) {
+      setReviewError(err?.message || "An unexpected error occurred while saving your review.");
+    } finally {
+      setReviewSubmitting(false);
+    }
   };
 
   // Reset indices and quantity when viewing a different product
@@ -1103,12 +1219,30 @@ export default function ProductDetailClient({ productId }: { productId: string }
               </div>
             </div>
 
-            <button
-              onClick={() => setIsWritingReview(!isWritingReview)}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-black hover:bg-neutral-800 text-white rounded-full text-xs font-bold transition shadow-sm w-fit"
-            >
-              <span>{isWritingReview ? "Cancel Review" : "Write a Player Review"}</span>
-            </button>
+            {reviewEligibility.canReview ? (
+              <button
+                onClick={() => {
+                  setIsWritingReview(!isWritingReview);
+                  setReviewError(null);
+                }}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-black hover:bg-neutral-800 text-white rounded-full text-xs font-bold transition shadow-sm w-fit"
+              >
+                <span>{isWritingReview ? "Cancel Review" : "Write a Verified Review"}</span>
+              </button>
+            ) : !reviewEligibility.isLoggedIn ? (
+              <Link
+                href={`/login?redirect_url=/products/${productId}`}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-black text-white rounded-full text-xs font-bold transition shadow-sm w-fit"
+              >
+                <Lock className="w-3.5 h-3.5 text-red-400" />
+                <span>Sign In to Review</span>
+              </Link>
+            ) : (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-medium">
+                <ShieldAlert className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <span>Verified purchasers or admins only</span>
+              </div>
+            )}
           </div>
 
           {/* Collapsible Write Review Form */}
@@ -1117,9 +1251,27 @@ export default function ProductDetailClient({ productId }: { productId: string }
               onSubmit={handleAddReview}
               className="bg-gray-50/90 rounded-3xl p-6 sm:p-8 border border-gray-200/80 mb-10 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200 max-w-2xl"
             >
-              <h3 className="text-sm font-bold text-gray-950 uppercase tracking-wide">
-                Share Your Experience with {product.name}
-              </h3>
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-sm font-bold text-gray-950 uppercase tracking-wide">
+                  Share Your Experience with {product.name}
+                </h3>
+                {reviewEligibility.isAdmin ? (
+                  <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-2.5 py-0.5 rounded-full">
+                    👑 Store Admin
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                    <Check className="w-3 h-3 text-emerald-600" /> Verified Purchaser
+                  </span>
+                )}
+              </div>
+
+              {reviewError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-semibold flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                  <span>{reviewError}</span>
+                </div>
+              )}
 
               {reviewSuccess ? (
                 <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 text-xs font-bold flex items-center gap-2">
@@ -1230,9 +1382,17 @@ export default function ProductDetailClient({ productId }: { productId: string }
 
                   <button
                     type="submit"
-                    className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-full text-xs font-bold transition shadow-md shadow-red-600/20"
+                    disabled={reviewSubmitting}
+                    className="px-6 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded-full text-xs font-bold transition shadow-md shadow-red-600/20 inline-flex items-center gap-2"
                   >
-                    Submit Verified Review
+                    {reviewSubmitting ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Publishing Review...</span>
+                      </>
+                    ) : (
+                      <span>Submit Verified Review</span>
+                    )}
                   </button>
                 </>
               )}

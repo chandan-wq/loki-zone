@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -174,6 +174,30 @@ export default function AdminDashboardPage() {
   const isNormal = adminRole === "normal";
   const loggedInEmail = extractClerkEmail(user)?.toLowerCase().trim() || "";
   const isActualMaster = Boolean(loggedInEmail && MAIN_ADMIN_EMAILS.includes(loggedInEmail));
+
+  // Sanitize active staff to ensure removed legacy entries never render
+  const activeStaffMembers = useMemo(() => {
+    return (staffMembers || []).filter(
+      (s) =>
+        s.email?.toLowerCase().trim() !== "joshi.ritiz@gmail.com" &&
+        !s.email?.toLowerCase().includes("ritiz") &&
+        s.id !== "owner-ritiz"
+    );
+  }, [staffMembers]);
+
+  // Clean up any legacy persisted entry from local state
+  useEffect(() => {
+    if (staffMembers.some((s) => s.email?.toLowerCase().includes("ritiz") || s.id === "owner-ritiz")) {
+      setStaffMembers(
+        staffMembers.filter(
+          (s) =>
+            s.email?.toLowerCase().trim() !== "joshi.ritiz@gmail.com" &&
+            !s.email?.toLowerCase().includes("ritiz") &&
+            s.id !== "owner-ritiz"
+        )
+      );
+    }
+  }, [staffMembers, setStaffMembers]);
 
   // Helper to obtain server-verified admin authorization headers
   const getAdminAuthHeaders = async (): Promise<Record<string, string>> => {
@@ -491,6 +515,19 @@ export default function AdminDashboardPage() {
   const [showStaffPassword, setShowStaffPassword] = useState(false);
   const [staffSubmitting, setStaffSubmitting] = useState(false);
   const [staffFormError, setStaffFormError] = useState("");
+
+  const [isEditStaffOpen, setIsEditStaffOpen] = useState(false);
+  const [editingStaff, setEditingStaff] = useState<{
+    id: string;
+    name: string;
+    email: string;
+    role: "main" | "normal";
+    status: "active" | "inactive";
+    newPassword?: string;
+  } | null>(null);
+  const [editStaffSubmitting, setEditStaffSubmitting] = useState(false);
+  const [editStaffError, setEditStaffError] = useState("");
+  const [showEditStaffPassword, setShowEditStaffPassword] = useState(false);
 
   // 8. STORE SETTINGS STATE
   const [settingsForm, setSettingsForm] = useState<StoreSettingsCMS>({
@@ -1126,6 +1163,77 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleOpenEditStaff = (st: any) => {
+    setEditingStaff({
+      id: st.id,
+      name: st.name,
+      email: st.email,
+      role: (st.role as "main" | "normal") || "normal",
+      status: (st.status as "active" | "inactive") || "active",
+      newPassword: "",
+    });
+    setEditStaffError("");
+    setIsEditStaffOpen(true);
+  };
+
+  const handleSaveEditStaff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isMaster || !editingStaff) return;
+
+    if (!editingStaff.name.trim() || editingStaff.name.trim().length < 2) {
+      setEditStaffError("Name must be at least 2 characters.");
+      return;
+    }
+
+    try {
+      setEditStaffSubmitting(true);
+      setEditStaffError("");
+      const headers = await getAdminAuthHeaders();
+      const res = await fetch("/api/admin/staff", {
+        method: "PATCH",
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: editingStaff.id,
+          name: editingStaff.name.trim(),
+          role: editingStaff.role,
+          status: editingStaff.status,
+          ...(editingStaff.newPassword && editingStaff.newPassword.trim().length >= 8
+            ? { password: editingStaff.newPassword.trim() }
+            : {}),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to update staff member.");
+      }
+
+      setStaffMembers(
+        staffMembers.map((s) =>
+          s.id === editingStaff.id
+            ? {
+                ...s,
+                name: editingStaff.name.trim(),
+                role: editingStaff.role,
+                status: editingStaff.status,
+              }
+            : s
+        )
+      );
+
+      showToast(`✅ Successfully updated "${editingStaff.name}".`);
+      setIsEditStaffOpen(false);
+      setEditingStaff(null);
+    } catch (err: any) {
+      setEditStaffError(err.message || "Failed to update staff member.");
+    } finally {
+      setEditStaffSubmitting(false);
+    }
+  };
+
   // SETTINGS HANDLER
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1319,7 +1427,7 @@ export default function AdminDashboardPage() {
         { id: "orders", label: "Orders & Courier", icon: ShoppingBag, badge: orders.length },
         { id: "coupons", label: "Coupons & Promos", icon: Tag, badge: coupons.length },
         { id: "customers", label: "Customers CRM", icon: Users, badge: customers.length },
-        { id: "staff", label: "Two-Admin Roles", icon: ShieldCheck, badge: staffMembers.length },
+        { id: "staff", label: "Admin & Staff Roles", icon: ShieldCheck, badge: activeStaffMembers.length },
         { id: "settings", label: "Store Settings", icon: Settings },
       ]
     : [
@@ -2827,7 +2935,7 @@ export default function AdminDashboardPage() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#121824] border border-slate-800 rounded-2xl p-5">
                 <div>
                   <h2 className="text-lg font-black text-white tracking-tight">
-                    Staff Accounts &amp; Two-Admin Hierarchy
+                    Staff Accounts &amp; Admin Hierarchy
                   </h2>
                   <p className="text-xs text-slate-400 mt-1">
                     Manage store operators. Assign Main Admin (Full Authority) or Normal Admin (Staff Desk).
@@ -2870,7 +2978,7 @@ export default function AdminDashboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/60">
-                    {staffMembers.map((st) => (
+                    {activeStaffMembers.map((st) => (
                       <tr key={st.id} className="hover:bg-slate-800/20 transition">
                         <td className="py-3 px-4">
                           <div className="font-bold text-white">{st.name}</div>
@@ -2904,14 +3012,24 @@ export default function AdminDashboardPage() {
                         </td>
                         <td className="py-3 px-4 text-slate-400">{st.lastLogin}</td>
                         <td className="py-3 px-4 text-right">
-                          {st.role !== "main" && (
+                          <div className="flex items-center justify-end gap-1.5">
                             <button
-                              onClick={() => handleRemoveStaff(st.id, st.name)}
-                              className="text-slate-500 hover:text-red-400 font-semibold text-xs transition p-1 hover:bg-red-500/10 rounded"
+                              onClick={() => handleOpenEditStaff(st)}
+                              className="text-slate-400 hover:text-white font-semibold text-xs transition px-2 py-1 hover:bg-slate-800 rounded flex items-center gap-1"
+                              title="Edit staff details"
                             >
-                              Remove
+                              <Edit className="w-3.5 h-3.5" />
+                              <span>Edit</span>
                             </button>
-                          )}
+                            {st.email.toLowerCase() !== adminEmail?.toLowerCase() && (
+                              <button
+                                onClick={() => handleRemoveStaff(st.id, st.name)}
+                                className="text-slate-500 hover:text-red-400 font-semibold text-xs transition px-2 py-1 hover:bg-red-500/10 rounded"
+                              >
+                                Remove
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -3266,9 +3384,9 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* Category-Specific Specifications Fields */}
-              {newProd.category === "Rackets" && (
+              {["Rackets", "Bat", "Rubber"].includes(newProd.category) && (
                 <div className="p-3 bg-[#0b0f17] border border-slate-800 rounded-xl space-y-3">
-                  <span className="font-bold text-slate-300 block text-xs">Racket Performance Ratings (0–100)</span>
+                  <span className="font-bold text-slate-300 block text-xs">Equipment Performance Ratings (0–100)</span>
                   <div className="grid grid-cols-3 gap-2">
                     <div>
                       <span className="text-[10px] text-slate-400 block">Speed: {newProd.speed}</span>
@@ -3533,9 +3651,9 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* Category-Specific Specifications */}
-              {editingProduct.category === "Rackets" && (
+              {["Rackets", "Bat", "Rubber"].includes(editingProduct.category) && (
                 <div className="p-3 bg-[#0b0f17] border border-slate-800 rounded-xl space-y-2">
-                  <span className="font-bold text-slate-300 block text-xs">Racket Performance Ratings (0–100)</span>
+                  <span className="font-bold text-slate-300 block text-xs">Equipment Performance Ratings (0–100)</span>
                   <div className="grid grid-cols-3 gap-2">
                     <div>
                       <span className="text-[10px] text-slate-400 block">Speed: {editingProduct.specs?.speed ?? 85}</span>
@@ -4695,6 +4813,131 @@ export default function AdminDashboardPage() {
                 >
                   {staffSubmitting && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
                   <span>{staffSubmitting ? "Provisioning..." : "Add Staff Account"}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          MODAL 12B: EDIT STAFF ACCOUNT (MAIN ADMIN)
+          ======================================================== */}
+      {isEditStaffOpen && isMaster && editingStaff && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-[#121824] border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-md w-full text-xs shadow-2xl relative">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <Edit className="w-4 h-4 text-red-500" />
+                <span>Edit Staff / Admin Account</span>
+              </h3>
+              <button
+                onClick={() => {
+                  setIsEditStaffOpen(false);
+                  setEditingStaff(null);
+                }}
+                className="text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveEditStaff} className="space-y-4">
+              {editStaffError && (
+                <div className="p-3 bg-red-950/60 border border-red-800 rounded-xl text-red-300 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+                  <span>{editStaffError}</span>
+                </div>
+              )}
+
+              <div>
+                <label className="block font-bold text-slate-300 mb-1">Full Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editingStaff.name}
+                  onChange={(e) => setEditingStaff({ ...editingStaff, name: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#0b0f17] border border-slate-700 rounded-xl text-white focus:outline-none focus:border-red-500"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-300 mb-1">Email Address</label>
+                <input
+                  type="email"
+                  disabled
+                  value={editingStaff.email}
+                  className="w-full px-3 py-2 bg-[#0b0f17]/50 border border-slate-800 rounded-xl text-slate-400 font-mono cursor-not-allowed"
+                />
+                <span className="text-[10px] text-slate-500 mt-0.5 block">Email is locked to primary Clerk identity</span>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-300 mb-1">Administrative Role</label>
+                <select
+                  value={editingStaff.role}
+                  onChange={(e) => setEditingStaff({ ...editingStaff, role: e.target.value as "main" | "normal" })}
+                  className="w-full px-3 py-2 bg-[#0b0f17] border border-slate-700 rounded-xl text-white focus:outline-none focus:border-red-500"
+                >
+                  <option value="normal">Normal Admin (Store Staff - Stock &amp; Orders)</option>
+                  <option value="main">Main Admin (Full Unrestricted Access)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-300 mb-1">Account Status</label>
+                <select
+                  value={editingStaff.status}
+                  onChange={(e) => setEditingStaff({ ...editingStaff, status: e.target.value as "active" | "inactive" })}
+                  className="w-full px-3 py-2 bg-[#0b0f17] border border-slate-700 rounded-xl text-white focus:outline-none focus:border-red-500"
+                >
+                  <option value="active">Active (Full login permitted)</option>
+                  <option value="inactive">Inactive (Login revoked)</option>
+                </select>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-bold text-slate-300">Reset Password (Optional)</label>
+                  <span className="text-[10px] text-slate-400 font-mono">Leave blank to keep unchanged</span>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showEditStaffPassword ? "text" : "password"}
+                    minLength={8}
+                    placeholder="Enter new password (min 8 chars)..."
+                    value={editingStaff.newPassword || ""}
+                    onChange={(e) => setEditingStaff({ ...editingStaff, newPassword: e.target.value })}
+                    className="w-full px-3 py-2 pr-10 bg-[#0b0f17] border border-slate-700 rounded-xl text-white font-mono focus:outline-none focus:border-red-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowEditStaffPassword(!showEditStaffPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                  >
+                    {showEditStaffPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditStaffOpen(false);
+                    setEditingStaff(null);
+                  }}
+                  disabled={editStaffSubmitting}
+                  className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl font-bold hover:bg-slate-700 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editStaffSubmitting}
+                  className="inline-flex items-center gap-2 px-5 py-2 bg-red-600 hover:bg-red-500 disabled:bg-red-800 text-white rounded-xl font-bold transition shadow-md shadow-red-600/30"
+                >
+                  {editStaffSubmitting && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                  <span>{editStaffSubmitting ? "Saving Changes..." : "Save Changes"}</span>
                 </button>
               </div>
             </form>

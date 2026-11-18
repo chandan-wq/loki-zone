@@ -13,6 +13,16 @@ export interface CartItem {
   selectedHandle?: string;
   selectedSize?: string;
   category: string;
+  isCombo?: boolean;
+  comboItems?: {
+    id: string;
+    name: string;
+    price: number;
+    image: string;
+    quantity: number;
+    category?: string;
+    selectedVariant?: string;
+  }[];
 }
 
 export interface AppliedCoupon {

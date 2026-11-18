@@ -1,6 +1,7 @@
 import dynamic from "next/dynamic";
 import HeroSection from "@/components/HeroSection";
 import HorizontalScrollShowcase from "@/components/HorizontalScrollShowcase";
+import ComboStudioBanner from "@/components/ComboStudioBanner";
 
 // Defer below-the-fold sections so Hero and top showcase load immediately
 const EquipmentFinderSection = dynamic(() => import("@/components/EquipmentFinderSection"));
@@ -18,6 +19,9 @@ export default function HomePage() {
 
       {/* 2. Shop by Category: Interactive 3:4 Horizontal Showcase with Animation Videos */}
       <HorizontalScrollShowcase />
+
+      {/* 2B. Custom Combo Studio Banner */}
+      <ComboStudioBanner />
 
       {/* 3. Interactive Playstyle Advisor: Control / Spin / Speed Equipment Finder */}
       <EquipmentFinderSection />

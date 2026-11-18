@@ -1,56 +1,25 @@
-"use client";
+import { redirect } from "next/navigation";
+import { getVerifiedAdmin } from "@/lib/adminAuthServer";
 
-import React, { useEffect, useState } from "react";
-import { useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
-import { resolveAdminRole, extractClerkEmail } from "@/lib/adminAuth";
+export const instant = false;
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isLoaded, isSignedIn } = useUser();
-  const router = useRouter();
-  const [authorized, setAuthorized] = useState<boolean | null>(null);
+  const adminSession = await getVerifiedAdmin();
 
-  useEffect(() => {
-    if (!isLoaded) return;
-
-    if (!isSignedIn || !user) {
-      setAuthorized(false);
-      window.location.href = "/login?redirect_url=/admin";
-      return;
-    }
-
-    const primaryEmail = extractClerkEmail(user) || "";
-    const role = resolveAdminRole(primaryEmail, user.publicMetadata?.role);
-
-    if (!role) {
-      setAuthorized(false);
-      window.location.href = "/account?error=unauthorized_admin";
-      return;
-    }
-
-    setAuthorized(true);
-  }, [isLoaded, isSignedIn, user, router]);
-
-  if (!isLoaded || authorized === null) {
-    return (
-      <div className="min-h-screen bg-[#0b0f17] text-slate-100 flex items-center justify-center p-4">
-        <div className="text-center space-y-3">
-          <div className="w-9 h-9 border-2 border-red-500 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-xs font-semibold tracking-wider uppercase text-slate-400">
-            Verifying Admin Authorization...
-          </p>
-        </div>
-      </div>
-    );
+  // 1. Unauthenticated visitors -> Redirect on the server to login
+  if (!adminSession.userId) {
+    redirect("/login?redirect_url=/admin");
   }
 
-  if (!authorized) {
-    return null;
+  // 2. Authenticated users without admin privileges (e.g. normal customers) -> Redirect on the server to account
+  if (!adminSession.authorized || !adminSession.role) {
+    redirect("/account?error=unauthorized_admin");
   }
 
+  // 3. Authorized Staff or Administrator -> Render protected admin content
   return <>{children}</>;
 }

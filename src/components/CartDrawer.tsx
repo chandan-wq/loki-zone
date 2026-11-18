@@ -145,13 +145,22 @@ export default function CartDrawer() {
                 <p className="text-sm text-gray-500 mt-1 max-w-xs mx-auto">
                   Looks like you haven&apos;t added any rackets or gear to your bag yet.
                 </p>
-                <Link
-                  href="/category/all"
-                  onClick={closeCart}
-                  className="mt-5 inline-flex items-center gap-2 px-6 py-3 bg-black hover:bg-neutral-800 text-white rounded-full text-sm font-semibold transition"
-                >
-                  Start Shopping <ArrowRight className="w-4 h-4" />
-                </Link>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-2 mt-5">
+                  <Link
+                    href="/category/all"
+                    onClick={closeCart}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-black hover:bg-neutral-800 text-white rounded-full text-xs font-semibold transition"
+                  >
+                    Start Shopping <ArrowRight className="w-4 h-4" />
+                  </Link>
+                  <Link
+                    href="/custom-combo"
+                    onClick={closeCart}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-full text-xs font-bold transition shadow-md shadow-red-600/20"
+                  >
+                    ✨ Build Custom Combo
+                  </Link>
+                </div>
               </div>
             ) : (
               items.map((item) => (
@@ -175,6 +184,12 @@ export default function CartDrawer() {
                     <h4 className="font-bold text-sm text-gray-900 truncate mt-0.5">
                       {item.name}
                     </h4>
+
+                    {item.isCombo && item.comboItems && (
+                      <p className="text-[11px] text-emerald-700 font-semibold mt-0.5 line-clamp-2">
+                        Bundle: {item.comboItems.map((c) => c.name).join(" + ")}
+                      </p>
+                    )}
 
                     {(item.selectedColor || item.selectedHandle || item.selectedSize) && (
                       <p className="text-xs text-gray-500 mt-0.5 truncate">
@@ -341,6 +356,19 @@ export default function CartDrawer() {
 
               {/* Action buttons */}
               <div className="pt-2 space-y-2">
+                {/* Bundle Savings Incentive */}
+                <Link
+                  href="/custom-combo"
+                  onClick={closeCart}
+                  className="flex items-center justify-between p-2.5 rounded-xl bg-red-50 hover:bg-red-100/80 border border-red-200/80 text-red-700 text-xs font-semibold transition"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>🎁</span>
+                    <span>Want to bundle &amp; save up to 10%?</span>
+                  </div>
+                  <span className="font-bold underline text-[11px]">Custom Combo →</span>
+                </Link>
+
                 <Link
                   href={isSignedIn ? "/checkout" : "/login?redirect_url=/checkout"}
                   onClick={closeCart}

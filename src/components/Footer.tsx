@@ -109,6 +109,12 @@ export default function Footer() {
             </h4>
             <ul className="space-y-3 sm:space-y-2.5 text-sm sm:text-xs text-gray-400">
               <li>
+                <Link href="/custom-combo" className="text-red-400 font-bold hover:text-red-300 transition flex items-center gap-1.5">
+                  <span>Custom Combo Studio</span>
+                  <span className="text-[9px] px-1.5 py-0.2 bg-red-600 text-white rounded font-black">SAVE 10%</span>
+                </Link>
+              </li>
+              <li>
                 <Link href="/category/rackets" className="hover:text-red-400 transition">
                   Carbon Rackets
                 </Link>

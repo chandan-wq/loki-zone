@@ -355,11 +355,7 @@ export const useAdminStore = create<AdminState>()(
 
   loginAdmin: (email: string, role?: "main" | "normal") => {
     const normalized = email.trim().toLowerCase();
-    const isMain =
-      normalized === "chandanthakurchandan935@gmail.com" ||
-      normalized === "joshi.ritiz@gmail.com" ||
-      normalized === "ritiz.joshi@gmail.com" ||
-      normalized === "joshl.ritiz@gmail.com";
+    const isMain = normalized === "chandanthakurchandan935@gmail.com";
     const resolvedRole = role || (isMain ? "main" : "normal");
     set({
       isAdminAuthenticated: true,
@@ -374,36 +370,12 @@ export const useAdminStore = create<AdminState>()(
   // Staff Members Management (Managed by Main Admin)
   staffMembers: [
     {
-      id: "STAFF-000",
-      name: "Ritiz Joshi",
-      email: "joshi.ritiz@gmail.com",
-      role: "main",
-      status: "active",
-      lastLogin: "Active Now",
-    },
-    {
       id: "STAFF-001",
       name: "Chandan Thakur",
       email: "chandanthakurchandan935@gmail.com",
       role: "main",
       status: "active",
       lastLogin: "Active Now",
-    },
-    {
-      id: "STAFF-002",
-      name: "Store Operations Desk",
-      email: "staff@lokizone.com.np",
-      role: "normal",
-      status: "active",
-      lastLogin: "Oct 18, 2026",
-    },
-    {
-      id: "STAFF-003",
-      name: "Warehouse Dispatch Officer",
-      email: "dispatch@lokizone.com.np",
-      role: "normal",
-      status: "active",
-      lastLogin: "Oct 17, 2026",
     },
   ],
 
@@ -1411,7 +1383,7 @@ export const useAdminStore = create<AdminState>()(
     })),
 }),
 {
-  name: "loki_admin_store_v6",
+  name: "loki_admin_store_v7",
   storage: createJSONStorage(() => localStorage),
 }
 )
