@@ -26,11 +26,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   return {
-    title: `${product.name} | Ritiz TT Goods Nepal`,
-    description: product.description,
+    title: `${product.name} | LOKI Nepal Official`,
+    description: `${product.name} - NPR ${product.price.toLocaleString()}. ${product.subtitle || ""}. ${product.description.slice(0, 150)}... Official ITTF Approved equipment available in Nepal.`,
+    alternates: {
+      canonical: `https://loki-zone.vercel.app/products/${product.id}`,
+    },
     openGraph: {
-      title: `${product.name} - NPR ${product.price.toLocaleString()} | Ritiz TT Goods Nepal`,
+      title: `${product.name} - NPR ${product.price.toLocaleString()} | LOKI Nepal`,
       description: product.description,
+      url: `https://loki-zone.vercel.app/products/${product.id}`,
+      siteName: "LOKI ZONE Nepal",
       images: [
         {
           url: product.image,
@@ -45,9 +50,45 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 async function ProductContent({ params }: PageProps) {
   const { id } = await params;
+  const product = PRODUCTS.find((p) => p.id === id);
 
-  // Let ProductDetailClient dynamically resolve both static catalog and local store products
-  return <ProductDetailClient productId={id} />;
+  const productJsonLd = product
+    ? {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        name: product.name,
+        image: `https://loki-zone.vercel.app${product.image}`,
+        description: product.description,
+        brand: {
+          "@type": "Brand",
+          name: product.brand || "LOKI",
+        },
+        offers: {
+          "@type": "Offer",
+          url: `https://loki-zone.vercel.app/products/${product.id}`,
+          priceCurrency: "NPR",
+          price: product.price,
+          itemCondition: "https://schema.org/NewCondition",
+          availability: "https://schema.org/InStock",
+          seller: {
+            "@type": "Organization",
+            name: "LOKI ZONE Nepal",
+          },
+        },
+      }
+    : null;
+
+  return (
+    <>
+      {productJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+        />
+      )}
+      <ProductDetailClient productId={id} />
+    </>
+  );
 }
 
 export default function ProductPage({ params }: PageProps) {
