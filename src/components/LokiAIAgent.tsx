@@ -266,35 +266,35 @@ function LokiAIAgentContent() {
 
   return (
     <>
-      {/* Floating Trigger Button (Bottom Right) - Sleek compact circular icon on mobile to avoid blocking content */}
+      {/* Floating Trigger Button (Bottom Right) - Ultra-compact on mobile to never block page content */}
       <div
-        className={`fixed right-3 sm:right-6 z-50 flex items-center gap-2 ${
-          isProductPage ? "bottom-20 sm:bottom-6" : "bottom-4 sm:bottom-6"
+        className={`fixed right-2.5 sm:right-6 z-50 flex items-center gap-2 ${
+          isProductPage ? "bottom-16 sm:bottom-6" : "bottom-3 sm:bottom-6"
         }`}
       >
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className={`group relative flex items-center shadow-[0_8px_24px_-4px_rgba(220,38,38,0.35)] sm:shadow-[0_12px_36px_-6px_rgba(220,38,38,0.4)] transition-all duration-150 ease-out transform hover:scale-105 active:scale-95 border backdrop-blur-xl ${
+          className={`group relative flex items-center shadow-md sm:shadow-[0_12px_36px_-6px_rgba(220,38,38,0.4)] transition-all duration-150 ease-out transform hover:scale-105 active:scale-95 border backdrop-blur-xl ${
             isOpen
-              ? "p-2.5 sm:p-3.5 rounded-full bg-neutral-950 text-white border-neutral-800"
-              : "p-1.5 sm:pl-2 sm:pr-4 sm:py-2 rounded-full bg-gradient-to-r from-neutral-950 via-neutral-900 to-neutral-950 text-white border-red-500/40 hover:border-red-500/80 ring-2 ring-red-500/20"
+              ? "p-1.5 sm:p-3 rounded-full bg-neutral-950 text-white border-neutral-800"
+              : "p-1 sm:pl-2 sm:pr-4 sm:py-2 rounded-full bg-gradient-to-r from-neutral-950 via-neutral-900 to-neutral-950 text-white border-red-500/40 hover:border-red-500/80 ring-1 sm:ring-2 ring-red-500/20"
           }`}
           aria-label={isOpen ? "Close AI Coach" : "Open LOKI AI Coach"}
         >
           {isOpen ? (
-            <X className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            <X className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
           ) : (
             <>
-              {/* Glowing Badge Avatar with Table Tennis Paddle + Ball Icon */}
-              <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-tr from-red-600 via-red-500 to-rose-600 flex items-center justify-center text-white shadow-md shadow-red-600/40 flex-shrink-0">
-                <TableTennisAIIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5 sm:h-3 sm:w-3">
+              {/* Glowing Badge Avatar with Table Tennis Paddle + Ball Icon (Compact on mobile) */}
+              <div className="relative w-7 h-7 sm:w-10 sm:h-10 rounded-full bg-gradient-to-tr from-red-600 via-red-500 to-rose-600 flex items-center justify-center text-white shadow-sm shadow-red-600/40 flex-shrink-0">
+                <TableTennisAIIcon className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-white" />
+                <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2 sm:h-3 sm:w-3">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 sm:h-3 sm:w-3 bg-emerald-500 border-2 border-neutral-950" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 sm:h-3 sm:w-3 bg-emerald-500 border border-neutral-950" />
                 </span>
               </div>
 
-              {/* Text Badge (Coach Name + Subtitle) - Hidden on mobile so it doesn't block screen space! */}
+              {/* Text Badge (Coach Name + Subtitle) - Hidden on mobile to keep footprint tiny */}
               <div className="hidden sm:flex flex-col text-left pl-2">
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs font-black tracking-tight text-white group-hover:text-red-400 transition">

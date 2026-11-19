@@ -567,11 +567,14 @@ export default function AdminDashboardPage() {
     return matchStatus && matchSearch;
   });
 
-  // KPI Calculations
-  const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);
-  const totalItemsSold = orders.reduce((sum, o) => sum + o.itemsCount, 0);
+  // KPI Calculations (100% real live metrics computed from non-cancelled orders)
+  const nonCancelledOrders = orders.filter((o) => o.status !== "Cancelled");
+  const totalRevenue = nonCancelledOrders.reduce((sum, o) => sum + o.total, 0);
+  const totalItemsSold = nonCancelledOrders.reduce((sum, o) => sum + o.itemsCount, 0);
   const lowStockCount = products.filter((p) => p.stockCount <= 5).length;
-  const processingOrdersCount = orders.filter((o) => o.status === "Processing").length;
+  const processingOrdersCount = orders.filter((o) => o.status === "Processing" || o.status === "Pending Confirmation").length;
+  const deliveredOrdersCount = orders.filter((o) => o.status === "Delivered").length;
+  const avgOrderValue = nonCancelledOrders.length > 0 ? Math.round(totalRevenue / nonCancelledOrders.length) : 0;
 
   // Role switching (Only authenticated Main Admins can toggle preview mode)
   const handleSwitchToStaff = () => {
@@ -1663,9 +1666,9 @@ export default function AdminDashboardPage() {
                     <div className="text-2xl font-black text-white">
                       Rs. {totalRevenue.toLocaleString()}
                     </div>
-                    <div className="text-[11px] text-slate-400 mt-2 flex items-center gap-1">
-                      <span className="text-emerald-400 font-bold">+18.4%</span>
-                      <span>from last month</span>
+                    <div className="text-[11px] text-slate-400 mt-2 flex items-center gap-1.5">
+                      <span className="text-emerald-400 font-bold">{nonCancelledOrders.length} active orders</span>
+                      <span>· avg Rs. {avgOrderValue.toLocaleString()}</span>
                     </div>
                   </div>
                 ) : (

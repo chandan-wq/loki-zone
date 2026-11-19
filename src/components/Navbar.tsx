@@ -444,12 +444,11 @@ export default function Navbar() {
                 <>
                   <Link
                     href="/login"
-                    className="sm:hidden inline-flex items-center gap-1.5 py-1.5 px-3 text-xs font-bold text-gray-800 hover:text-red-600 bg-gray-100/80 hover:bg-gray-100 border border-gray-200 rounded-full transition shadow-xs"
+                    className="sm:hidden p-2 text-gray-700 hover:text-black hover:bg-gray-100 rounded-full transition"
                     aria-label="Sign In to your account"
                     title="Sign In"
                   >
-                    <User className="w-3.5 h-3.5 text-gray-600" />
-                    <span>Sign In</span>
+                    <User className="w-5 h-5" />
                   </Link>
 
                   <div className="hidden sm:inline-flex items-center gap-2">
@@ -503,16 +502,16 @@ export default function Navbar() {
         {/* Mobile-Only Dedicated Custom Combo Ribbon (prevents mobile header icon overflow) */}
         <Link
           href="/custom-combo"
-          className="sm:hidden flex items-center justify-between px-3.5 py-1.5 bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white text-[11px] font-bold shadow-xs transition hover:brightness-105 border-t border-red-500/20"
+          className="sm:hidden flex items-center justify-between px-3.5 py-1.5 bg-gradient-to-r from-neutral-950 via-slate-900 to-red-950 text-white text-[11px] font-bold shadow-xs transition hover:brightness-110 border-t border-b border-red-500/20"
         >
           <div className="flex items-center gap-1.5 min-w-0">
             <Sparkles className="w-3.5 h-3.5 text-amber-300 fill-amber-300 animate-pulse shrink-0" />
-            <span className="tracking-tight truncate font-extrabold">Custom Combo Studio</span>
-            <span className="bg-black/25 text-amber-200 px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider shrink-0">
+            <span className="tracking-tight truncate font-extrabold text-white">Custom Combo Studio</span>
+            <span className="bg-red-600/90 text-white px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider shrink-0">
               -10%
             </span>
           </div>
-          <span className="text-[10px] font-semibold text-rose-100 flex items-center gap-0.5 shrink-0 pl-2">
+          <span className="text-[10px] font-bold text-red-400 flex items-center gap-0.5 shrink-0 pl-2">
             Build Set <ChevronRight className="w-3 h-3" />
           </span>
         </Link>
