@@ -29,13 +29,29 @@ function UnauthorizedAlert() {
   if (error !== "unauthorized_admin") return null;
 
   return (
-    <div className="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-3">
-      <ShieldAlert className="w-5 h-5 text-amber-600 flex-shrink-0" />
-      <div>
-        <p className="font-bold">Restricted Area Notice</p>
-        <p className="text-amber-700">
-          Your account is active as a customer. Administrator or staff credentials are required to access management portals.
-        </p>
+    <div className="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+      <div className="flex items-center gap-3">
+        <ShieldAlert className="w-5 h-5 text-amber-600 flex-shrink-0" />
+        <div>
+          <p className="font-bold">Restricted Area Notice</p>
+          <p className="text-amber-700">
+            Your current login is signed in as a customer account. Administrator or staff credentials are required to access management portals.
+          </p>
+        </div>
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <Link
+          href="/login?switch=true&redirect_url=/admin"
+          className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition shadow-sm"
+        >
+          Switch to Admin
+        </Link>
+        <Link
+          href="/"
+          className="px-3 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl font-bold text-xs transition"
+        >
+          Storefront
+        </Link>
       </div>
     </div>
   );

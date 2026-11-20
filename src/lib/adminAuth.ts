@@ -32,6 +32,7 @@
 export const MAIN_ADMIN_EMAILS = [
   "chandanthakurchandan935@gmail.com",
   "joshi.ritiz@gmail.com",
+  "chandan.skt978@gmail.com",
   ...(process.env.MAIN_ADMIN_EMAIL ? [process.env.MAIN_ADMIN_EMAIL.toLowerCase().trim()] : []),
 ];
 

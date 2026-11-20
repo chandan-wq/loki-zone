@@ -15,6 +15,8 @@ import {
   Settings,
   Users,
   ShieldCheck,
+  ShieldAlert,
+  ArrowLeft,
   Search,
   Plus,
   Edit,
@@ -194,6 +196,7 @@ export default function AdminDashboardPage() {
 
   // Authentication Guard synchronized with Clerk server session
   const [isClientReady, setIsClientReady] = useState(false);
+  const [authDenied, setAuthDenied] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isUserLoaded) return;
@@ -226,7 +229,7 @@ export default function AdminDashboardPage() {
 
       if (!verifiedRole) {
         logoutAdmin();
-        router.replace("/account?error=unauthorized_admin");
+        setAuthDenied(primaryEmail || "Your Account");
         return;
       }
 
@@ -1423,6 +1426,46 @@ export default function AdminDashboardPage() {
         { id: "rates", label: "Wholesale Rate Lookup", icon: FileSpreadsheet, badge: "Matrix" },
       ];
 
+  if (authDenied) {
+    return (
+      <div className="min-h-screen bg-[#0b0f17] text-slate-100 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-[#121824] border border-slate-800 rounded-3xl p-8 text-center space-y-6 shadow-2xl">
+          <div className="w-16 h-16 bg-red-950/60 text-red-500 rounded-2xl mx-auto flex items-center justify-center border border-red-800/50 shadow-lg">
+            <ShieldAlert className="w-8 h-8" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black text-white tracking-tight">Administrator Access Required</h2>
+            <p className="text-xs text-slate-400 mt-2">
+              Signed in as <span className="font-bold text-white">{authDenied}</span>. This account does not currently hold administrator privileges.
+            </p>
+          </div>
+          <div className="space-y-3 pt-2">
+            <button
+              onClick={handleAdminLogout}
+              className="w-full py-3.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-lg shadow-red-600/30 transition flex items-center justify-center gap-2"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Sign Out &amp; Switch Account</span>
+            </button>
+            <Link
+              href="/"
+              className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold uppercase tracking-wider transition flex items-center justify-center gap-2 border border-slate-700"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Storefront</span>
+            </Link>
+            <Link
+              href="/account"
+              className="w-full py-2 text-xs text-slate-400 hover:text-white font-medium transition block"
+            >
+              Go to Customer Account
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!isClientReady || !isAdminAuthenticated) {
     return (
       <div className="min-h-screen bg-[#0b0f17] text-slate-100 flex items-center justify-center p-4">
@@ -1431,6 +1474,15 @@ export default function AdminDashboardPage() {
           <p className="text-xs font-semibold tracking-wider uppercase text-slate-400">
             Checking Authorized Access...
           </p>
+          <div className="pt-2">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-red-400 transition"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Store</span>
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -1537,9 +1589,10 @@ export default function AdminDashboardPage() {
             <Link
               href="/"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-slate-300 hover:text-white transition shadow-sm"
+              title="Return to Public Store"
             >
-              <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-              <span className="hidden sm:inline">Storefront</span>
+              <ArrowLeft className="w-3.5 h-3.5 text-slate-400" />
+              <span>Back to Store</span>
             </Link>
 
             {/* Log Out */}

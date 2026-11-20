@@ -1,3 +1,4 @@
+import { MAIN_ADMIN_EMAILS } from "@/lib/adminAuth";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { Product, PRODUCTS } from "@/data/products";
@@ -355,7 +356,7 @@ export const useAdminStore = create<AdminState>()(
 
   loginAdmin: (email: string, role?: "main" | "normal") => {
     const normalized = email.trim().toLowerCase();
-    const isMain = normalized === "chandanthakurchandan935@gmail.com";
+    const isMain = MAIN_ADMIN_EMAILS.includes(normalized);
     const resolvedRole = role || (isMain ? "main" : "normal");
     set({
       isAdminAuthenticated: true,

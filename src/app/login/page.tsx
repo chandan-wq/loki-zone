@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, KeyRound, CheckCircle2, RefreshCw, ShoppingBag, Store, User as UserIcon } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, ShieldCheck, KeyRound, CheckCircle2, RefreshCw, ShoppingBag, Store, User as UserIcon } from "lucide-react";
 import { useSignIn } from "@clerk/nextjs/legacy";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useAdminStore } from "@/store/useAdminStore";
@@ -39,15 +39,19 @@ function LoginForm() {
     }
   }, [searchParams, isSignedIn, signOut]);
 
-  // Auto-redirect if redirect_url is specified (e.g. from checkout or guarded route)
+  // Safe redirect if redirect_url is specified (NEVER trap user in /admin loop if not authorized)
   useEffect(() => {
     if (isUserLoaded && isSignedIn && user && searchParams.get("switch") !== "true") {
       const redirectUrl = searchParams.get("redirect_url");
       if (redirectUrl) {
         const currentEmail = extractClerkEmail(user) || "";
         const adminRole = resolveAdminRole(currentEmail, user.publicMetadata?.role);
-        if (adminRole) loginAdmin(currentEmail, adminRole);
-        window.location.href = redirectUrl;
+        if (adminRole) {
+          loginAdmin(currentEmail, adminRole);
+          window.location.href = redirectUrl;
+        } else if (!redirectUrl.includes("/admin")) {
+          window.location.href = redirectUrl;
+        }
       }
     }
   }, [isUserLoaded, isSignedIn, user, searchParams, loginAdmin]);
@@ -63,6 +67,19 @@ function LoginForm() {
         <div className="max-w-md w-full bg-white rounded-3xl border border-gray-150 shadow-xl p-8 sm:p-10 space-y-6 text-center">
           <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl mx-auto flex items-center justify-center border border-emerald-200 shadow-sm">
             <CheckCircle2 className="w-7 h-7" />
+          </div>
+
+          <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-red-600 transition"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Store</span>
+            </Link>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+              Active Session
+            </span>
           </div>
 
           <div>
@@ -384,6 +401,20 @@ function LoginForm() {
   return (
     <div className="min-h-screen bg-gray-50/70 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full bg-white rounded-3xl border border-gray-150 shadow-xl p-8 sm:p-10 space-y-6">
+        {/* Top Navigation: Back to Store */}
+        <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-red-600 transition"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Store</span>
+          </Link>
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">
+            LOKI Zone Nepal
+          </span>
+        </div>
+
         {/* Brand Header */}
         <div className="text-center">
           <Link href="/" className="inline-block mb-3 group">
