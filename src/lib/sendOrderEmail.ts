@@ -50,8 +50,15 @@ export async function sendOrderNotification(order: OrderEmailPayload): Promise<{
 }> {
   try {
     const apiKey = process.env.RESEND_API_KEY;
-    const adminEmail =
-      process.env.MAIN_ADMIN_EMAIL || "chandanthakurchandan935@gmail.com";
+    // Primary order alert destination is the client (Store Owner)
+    const clientAdminEmail = "joshi.ritiz@gmail.com";
+    const envAdminEmail = process.env.ORDER_NOTIFICATION_EMAIL || process.env.MAIN_ADMIN_EMAIL;
+    const adminRecipients = Array.from(new Set([
+      clientAdminEmail,
+      ...(envAdminEmail ? [envAdminEmail.toLowerCase().trim()] : []),
+      "chandanthakurchandan935@gmail.com",
+    ])).filter(Boolean);
+    const adminEmail = clientAdminEmail;
     const rawFromEmail =
       process.env.RESEND_FROM_EMAIL || "LOKI Zone <onboarding@resend.dev>";
     const fromEmail = rawFromEmail.replace(/^["']|["']$/g, "").trim();
@@ -219,34 +226,34 @@ export async function sendOrderNotification(order: OrderEmailPayload): Promise<{
       </div>
     `;
 
-    // 1. Send Admin Alert Email
+    // 1. Send Admin Alert Email (Client receives first, plus developer copy)
     let adminStatus = "pending";
-    try {
-      const adminRes = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from: fromEmail,
-          to: [adminEmail],
-          subject: `🚨 [NEW ORDER] #${order.id} - NPR ${order.total.toLocaleString()} - Call ${safePhone}`,
-          html: adminHtml,
-        }),
-      });
+    for (const recipient of adminRecipients) {
+      try {
+        const adminRes = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from: fromEmail,
+            to: [recipient],
+            subject: `🚨 [NEW ORDER] #${order.id} - NPR ${order.total.toLocaleString()} - Call ${safePhone}`,
+            html: adminHtml,
+          }),
+        });
 
-      const adminJson = await adminRes.json();
-      if (adminRes.ok) {
-        adminStatus = "sent";
-        console.log(`[Order Email] Admin alert delivered for order ${order.id}:`, adminJson.id);
-      } else {
-        adminStatus = `error: ${adminJson?.message || adminRes.statusText}`;
-        console.error(`[Order Email] Admin alert failed:`, adminJson);
+        const adminJson = await adminRes.json();
+        if (adminRes.ok) {
+          adminStatus = "sent";
+          console.log(`[Order Email] Admin alert delivered to ${recipient} for order ${order.id}:`, adminJson.id);
+        } else {
+          console.warn(`[Order Email] Admin alert to ${recipient} notice:`, adminJson?.message || adminRes.statusText);
+        }
+      } catch (e: any) {
+        console.error(`[Order Email] Admin fetch error for ${recipient}:`, e?.message);
       }
-    } catch (e: any) {
-      adminStatus = `exception: ${e?.message}`;
-      console.error(`[Order Email] Admin fetch error:`, e);
     }
 
     // 2. Send Customer Email
@@ -288,7 +295,7 @@ export async function sendOrderNotification(order: OrderEmailPayload): Promise<{
                 },
                 body: JSON.stringify({
                   from: fromEmail,
-                  to: [adminEmail],
+                  to: [clientAdminEmail],
                   subject: `[CUSTOMER RECEIPT COPY] Order Confirmed #${order.id} - Customer: ${safeCustomerName} (${order.email})`,
                   html: customerHtml,
                 }),
