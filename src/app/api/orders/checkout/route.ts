@@ -3,6 +3,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { sendOrderNotification } from "@/lib/sendOrderEmail";
 import { extractClerkEmail } from "@/lib/adminAuth";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 interface CheckoutRequestBody {
   idempotencyKey?: string;
@@ -24,6 +25,25 @@ interface CheckoutRequestBody {
 
 export async function POST(req: NextRequest) {
   try {
+    // 1. Rate Limiting Protection (Max 15 checkout submissions per minute per IP)
+    const clientIp = getClientIp(req);
+    const rateCheck = checkRateLimit(`checkout_${clientIp}`, {
+      windowMs: 60_000,
+      maxRequests: 15,
+    });
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `High server traffic. Please wait ${rateCheck.retryAfterSec} seconds before submitting again.`,
+        },
+        {
+          status: 429,
+          headers: { "Retry-After": String(rateCheck.retryAfterSec) },
+        }
+      );
+    }
+
     const body = (await req.json()) as CheckoutRequestBody;
 
     if (!body || typeof body !== "object") {
@@ -183,12 +203,10 @@ export async function POST(req: NextRequest) {
           courierNote: notes ? `${notes} | City: ${city}` : `Delivery to ${city}`,
         };
 
-        // Send email notifications directly (Admin order alert & customer confirmation)
-        try {
-          await sendOrderNotification(notifyPayload);
-        } catch (emailErr) {
-          console.warn("[Checkout] Direct email notification warning:", emailErr);
-        }
+        // Dispatch email notifications asynchronously in the background so customer gets instant order confirmation response
+        sendOrderNotification(notifyPayload).catch((emailErr) => {
+          console.warn("[Checkout] Background email notification warning:", emailErr);
+        });
       } catch (notifyErr) {
         console.warn("[Checkout] Notification preparation warning:", notifyErr);
       }

@@ -2450,7 +2450,7 @@ export default function AdminDashboardPage() {
                             </td>
                             <td className="py-3.5 px-4 whitespace-nowrap">
                               <div className="flex text-amber-400">
-                                {[...Array(rev.rating || 5)].map((_, i) => (
+                                {[...Array(Math.max(1, Math.min(5, Math.floor(rev.rating || 5))))].map((_, i) => (
                                   <Star key={i} className="w-3.5 h-3.5 fill-amber-400" />
                                 ))}
                               </div>

@@ -43,7 +43,14 @@ export async function GET() {
       featuredBadge: s.featured_badge,
     }));
 
-    return NextResponse.json({ success: true, slides: mapped });
+    return NextResponse.json(
+      { success: true, slides: mapped },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=120, stale-while-revalidate=600",
+        },
+      }
+    );
   } catch (err: any) {
     return NextResponse.json({
       success: true,

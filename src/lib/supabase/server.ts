@@ -35,13 +35,21 @@ function getServerEnv() {
  * This client bypasses RLS and must NEVER be imported into or executed within
  * client-side components ("use client").
  */
+let cachedAdminClient: SupabaseClient<any> | null = null;
+
 export function createAdminClient(): SupabaseClient<any> {
+  if (cachedAdminClient) {
+    return cachedAdminClient;
+  }
+
   const { url, serviceRoleKey } = getServerEnv();
 
-  return createClient(url, serviceRoleKey, {
+  cachedAdminClient = createClient(url, serviceRoleKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
     },
   });
+
+  return cachedAdminClient;
 }

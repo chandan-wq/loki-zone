@@ -1,8 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export async function POST(req: NextRequest) {
   try {
+    const clientIp = getClientIp(req);
+    const rateCheck = checkRateLimit(`coupon_${clientIp}`, {
+      windowMs: 60_000,
+      maxRequests: 25,
+    });
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { valid: false, error: "Too many coupon attempts. Please wait a moment." },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const code = (body.code || "").toUpperCase().trim();
     const subtotal = Number(body.subtotal) || 0;

@@ -2001,7 +2001,7 @@ export default function LandingPageCMSStudio() {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex text-amber-400 gap-0.5">
-                    {[...Array(rev.rating || 5)].map((_, i) => (
+                    {[...Array(Math.max(1, Math.min(5, Math.floor(rev.rating || 5))))].map((_, i) => (
                       <Star key={i} className="w-3.5 h-3.5 fill-amber-400" />
                     ))}
                   </div>

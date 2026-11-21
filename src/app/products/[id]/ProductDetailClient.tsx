@@ -1409,7 +1409,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
                 <div>
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1 text-amber-500">
-                      {[...Array(rev.rating)].map((_, i) => (
+                      {[...Array(Math.max(1, Math.min(5, Math.floor(rev.rating || 5))))].map((_, i) => (
                         <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                       ))}
                     </div>

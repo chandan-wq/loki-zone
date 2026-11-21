@@ -158,7 +158,20 @@ export const useCartStore = create<CartStore>()(
     }),
     {
       name: "loki_cart_store_v2",
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => {
+        try {
+          if (typeof window !== "undefined" && window.localStorage) {
+            return window.localStorage;
+          }
+        } catch {
+          // Fallback in-memory storage for sandboxed/restricted environments
+        }
+        return {
+          getItem: () => null,
+          setItem: () => {},
+          removeItem: () => {},
+        };
+      }),
     }
   )
 );

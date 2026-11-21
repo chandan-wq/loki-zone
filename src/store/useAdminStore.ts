@@ -1385,7 +1385,20 @@ export const useAdminStore = create<AdminState>()(
 }),
 {
   name: "loki_admin_store_v9",
-  storage: createJSONStorage(() => localStorage),
+  storage: createJSONStorage(() => {
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        return window.localStorage;
+      }
+    } catch {
+      // Fallback for sandboxed or quota-restricted browser environments
+    }
+    return {
+      getItem: () => null,
+      setItem: () => {},
+      removeItem: () => {},
+    };
+  }),
   partialize: (state) => ({
     isAdminAuthenticated: state.isAdminAuthenticated,
     adminEmail: state.adminEmail,
