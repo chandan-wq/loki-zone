@@ -13,10 +13,17 @@ export async function GET() {
 
     const settings = record?.value ? { ...DEFAULT_STORE_SETTINGS, ...record.value } : DEFAULT_STORE_SETTINGS;
 
-    return NextResponse.json({
-      success: true,
-      settings,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        settings,
+      },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+        },
+      }
+    );
   } catch (err: any) {
     return NextResponse.json({
       success: true,

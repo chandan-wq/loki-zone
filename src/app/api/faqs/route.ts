@@ -31,7 +31,14 @@ export async function GET() {
       category: f.category,
     }));
 
-    return NextResponse.json({ success: true, faqs: mapped });
+    return NextResponse.json(
+      { success: true, faqs: mapped },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=120, stale-while-revalidate=600",
+        },
+      }
+    );
   } catch (err: any) {
     return NextResponse.json({
       success: true,

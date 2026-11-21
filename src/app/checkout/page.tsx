@@ -60,16 +60,18 @@ export default function CheckoutPage() {
   });
   const [syncedUserId, setSyncedUserId] = useState<string | null>(null);
 
-  // Automatically sync authenticated user details when Clerk session loads (during render)
-  if (user && user.id !== syncedUserId) {
-    setSyncedUserId(user.id);
-    setFormData((prev) => ({
-      ...prev,
-      fullName: prev.fullName || userFullName,
-      email: prev.email || userEmail,
-      phone: prev.phone || (user.phoneNumbers?.[0]?.phoneNumber ?? ""),
-    }));
-  }
+  // Automatically sync authenticated user details when Clerk session loads
+  useEffect(() => {
+    if (user && user.id !== syncedUserId) {
+      setSyncedUserId(user.id);
+      setFormData((prev) => ({
+        ...prev,
+        fullName: prev.fullName || userFullName,
+        email: prev.email || userEmail,
+        phone: prev.phone || (user.phoneNumbers?.[0]?.phoneNumber ?? ""),
+      }));
+    }
+  }, [user, syncedUserId, userFullName, userEmail]);
 
   // Redirect unauthenticated visitors to login immediately
   useEffect(() => {

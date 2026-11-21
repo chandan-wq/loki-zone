@@ -17,6 +17,13 @@ import {
   Package,
   ShieldCheck,
   Sparkles,
+  Flame,
+  Shirt,
+  Footprints,
+  Tag,
+  Phone,
+  Truck,
+  MessageCircle,
 } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import { useAdminStore } from "@/store/useAdminStore";
@@ -185,6 +192,77 @@ export default function Navbar() {
         { label: "Hard-shell Cases", href: "/category/accessories?type=cases" },
         { label: "Edge Tapes & Cleaners", href: "/category/accessories?type=maintenance" },
         { label: "Sports Towels", href: "/category/accessories?type=towels" },
+      ],
+    },
+  ];
+
+  const mobileCategories = [
+    {
+      id: "rackets",
+      name: "Table Tennis Rackets",
+      subtitle: "5-Ply Wood & Carbon Blades",
+      icon: Flame,
+      color: "text-red-600 bg-red-50",
+      badge: "Popular",
+      badgeColor: "bg-red-100 text-red-700",
+      items: [
+        { label: "LOKI Dragon Series", href: "/category/rackets?series=dragon", badge: "Tournament" },
+        { label: "Carbon Blades", href: "/category/rackets?type=carbon", badge: "Pro Speed" },
+        { label: "All-Round Rackets", href: "/category/rackets?type=allround", badge: "Control" },
+        { label: "Pro Rubber Sheets", href: "/category/rackets?type=rubber", badge: "High-Tension" },
+        { label: "View All Rackets & Blades →", href: "/category/rackets" },
+      ],
+    },
+    {
+      id: "apparel",
+      name: "Sportswear & Jerseys",
+      subtitle: "QuickDry Match Apparel",
+      icon: Shirt,
+      color: "text-blue-600 bg-blue-50",
+      items: [
+        { label: "Match Jerseys", href: "/category/apparel?type=jerseys", badge: "QuickDry" },
+        { label: "Performance Shorts", href: "/category/apparel?type=shorts" },
+        { label: "Warmup Tracksuits", href: "/category/apparel?type=tracksuits" },
+        { label: "View All Sportswear →", href: "/category/apparel" },
+      ],
+    },
+    {
+      id: "footwear",
+      name: "Court Footwear",
+      subtitle: "Honeycomb Grip Shoes",
+      icon: Footprints,
+      color: "text-amber-600 bg-amber-50",
+      items: [
+        { label: "Swift Court Shoes", href: "/category/footwear", badge: "Non-Marking" },
+        { label: "Anti-Slip Socks", href: "/category/footwear?type=socks" },
+        { label: "View All Footwear →", href: "/category/footwear" },
+      ],
+    },
+    {
+      id: "accessories",
+      name: "Accessories & Balls",
+      subtitle: "ITTF 3-Star Balls & Cases",
+      icon: Package,
+      color: "text-emerald-600 bg-emerald-50",
+      items: [
+        { label: "3-Star ITTF Balls", href: "/category/accessories?type=balls", badge: "40+ ABS" },
+        { label: "Hard-shell EVA Cases", href: "/category/accessories?type=cases" },
+        { label: "Edge Tapes & Cleaners", href: "/category/accessories?type=maintenance" },
+        { label: "Sports Towels & Wristbands", href: "/category/accessories?type=towels" },
+        { label: "View All Accessories →", href: "/category/accessories" },
+      ],
+    },
+    {
+      id: "shop",
+      name: "All Products & Deals",
+      subtitle: "Explore Full Catalog",
+      icon: Tag,
+      color: "text-purple-600 bg-purple-50",
+      items: [
+        { label: "🔥 Special Deals & Discounts", href: "/category/deals" },
+        { label: "✨ New Arrivals 2026", href: "/category/new" },
+        { label: "🏆 Best Sellers", href: "/category/best-sellers" },
+        { label: "All Products Catalog", href: "/category/all" },
       ],
     },
   ];
@@ -489,20 +567,20 @@ export default function Navbar() {
               {/* Mobile Menu Toggle */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                aria-label="Open Menu"
-                className="lg:hidden p-2 text-gray-700 hover:text-black hover:bg-gray-100 rounded-lg transition"
+                aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+                aria-expanded={isMobileMenuOpen}
+                className="lg:hidden w-9 h-9 flex items-center justify-center text-gray-800 hover:text-black hover:bg-gray-100 active:scale-95 rounded-xl border border-gray-200/90 shadow-2xs transition-all"
+                title="Menu"
               >
                 {isMobileMenuOpen ? (
-                  <X className="w-6 h-6" />
+                  <X className="w-5 h-5 text-gray-900" />
                 ) : (
-                  <Menu className="w-6 h-6" />
+                  <Menu className="w-5 h-5" />
                 )}
               </button>
             </div>
           </div>
         </div>
-
-        
 
         {/* Mobile Navigation Drawer & Backdrop */}
         {isMobileMenuOpen && (
@@ -515,110 +593,210 @@ export default function Navbar() {
             />
 
             {/* Slide-out Drawer */}
-            <div className="relative w-full max-w-xs sm:max-w-sm bg-white h-full shadow-2xl flex flex-col z-10 animate-in slide-in-from-right duration-300">
-              {/* Drawer Top Header with Logo & Close Button */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-white">
+            <div className="relative w-[88vw] max-w-sm bg-white h-full shadow-2xl flex flex-col z-10 animate-in slide-in-from-right duration-300">
+              {/* Drawer Top Header with Official Logo & Close Button */}
+              <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-100 bg-white/95 backdrop-blur-md sticky top-0 z-20">
                 <Link
                   href="/"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2.5 group"
                 >
-                  <div className="w-8 h-8 rounded-xl bg-red-600 text-white flex items-center justify-center font-black text-sm tracking-wider shadow-sm">
-                    LK
+                  <div className="relative w-8 h-8 bg-black rounded-xl p-1.5 flex items-center justify-center shadow-xs">
+                    <Image
+                      src="/images/loki-logo.png"
+                      alt="LOKI"
+                      width={28}
+                      height={28}
+                      className="object-contain"
+                    />
                   </div>
-                  <span className="font-black text-lg tracking-tight text-gray-950">
-                    LOKI <span className="text-red-600">ZONE</span>
-                  </span>
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-1">
+                      <span className="font-black text-base tracking-tight text-gray-950">
+                        LOKI
+                      </span>
+                      <span className="text-[10px] font-bold text-red-600 bg-red-50 px-1 py-0.2 rounded tracking-wide">
+                        ZONE
+                      </span>
+                    </div>
+                    <span className="text-[9px] font-semibold text-gray-500 uppercase tracking-wider">
+                      Official Nepal Store
+                    </span>
+                  </div>
                 </Link>
 
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
                   aria-label="Close Menu"
-                  className="p-2 text-gray-500 hover:text-gray-950 hover:bg-gray-100 rounded-full transition"
+                  className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-950 hover:bg-gray-100 rounded-full transition active:scale-95"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               {/* Scrollable Navigation Body */}
-              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-2">
-                {/* Featured Custom Combo Mobile Banner */}
+              <div className="flex-1 overflow-y-auto px-4 py-3.5 space-y-3.5 overscroll-contain">
+                {/* 1. Quick In-Drawer Search Bar */}
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setIsSearchOpen(true);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-500 text-xs font-semibold border border-gray-200/70 transition shadow-2xs group text-left"
+                >
+                  <Search className="w-4 h-4 text-gray-400 group-hover:text-red-600 transition-colors" />
+                  <span className="truncate">Search rackets, blades, shoes, balls...</span>
+                </button>
+
+                {/* 2. Featured Custom Combo Studio Card */}
                 <Link
                   href="/custom-combo"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center justify-between p-3.5 bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white rounded-2xl font-bold text-sm shadow-md shadow-red-600/20 mb-3 group"
+                  className="block p-3.5 bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white rounded-2xl shadow-md shadow-red-600/20 group border border-red-500/30 transition hover:shadow-lg"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center shrink-0">
-                      <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
-                    </div>
-                    <div>
-                      <div className="font-extrabold text-sm flex items-center gap-1.5">
-                        <span>Custom Combo Studio</span>
-                        <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-amber-400 text-slate-950">
-                          -10%
-                        </span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center shrink-0">
+                        <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
                       </div>
-                      <div className="text-[11px] text-white/80 font-normal">Build your personalized set</div>
+                      <div>
+                        <div className="font-extrabold text-sm flex items-center gap-1.5 leading-tight">
+                          <span>Custom Combo Studio</span>
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-amber-400 text-slate-950 uppercase tracking-wider">
+                            -10%
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-white/85 font-normal mt-0.5">
+                          Blade + Forehand + Backhand Rubbers
+                        </div>
+                      </div>
                     </div>
+                    <ChevronRight className="w-4 h-4 text-white/80 group-hover:translate-x-0.5 transition-transform shrink-0" />
                   </div>
-                  <ChevronRight className="w-4 h-4 text-white/80 group-hover:translate-x-0.5 transition-transform" />
                 </Link>
 
-                {navLinks.map((link) => {
-                  const isExpanded = mobileExpandedCategory === link.name;
-                  return (
-                    <div key={link.name} className="border-b border-gray-100/80 pb-2">
-                      {link.hasDropdown ? (
-                        <div>
+                {/* 3. Section Title: Shop by Category */}
+                <div>
+                  <div className="px-1 mb-1.5 flex items-center justify-between text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                    <span>Shop by Category</span>
+                    <Link
+                      href="/category/all"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="text-red-600 font-bold hover:underline normal-case text-xs"
+                    >
+                      View All
+                    </Link>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    {mobileCategories.map((cat) => {
+                      const isExpanded = mobileExpandedCategory === cat.name;
+                      const IconComponent = cat.icon;
+                      return (
+                        <div
+                          key={cat.id}
+                          className="rounded-xl border border-gray-100 overflow-hidden bg-white shadow-2xs"
+                        >
                           <button
-                            onClick={() => toggleMobileAccordion(link.name)}
-                            className="w-full flex items-center justify-between py-2.5 text-base font-bold text-gray-900 hover:text-red-600 transition"
+                            onClick={() => toggleMobileAccordion(cat.name)}
+                            className={`w-full flex items-center justify-between p-3 text-left transition ${
+                              isExpanded ? "bg-gray-50/80" : "hover:bg-gray-50/60"
+                            }`}
                           >
-                            <span>{link.name}</span>
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div
+                                className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${cat.color}`}
+                              >
+                                <IconComponent className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-sm font-bold text-gray-900 truncate">
+                                    {cat.name}
+                                  </span>
+                                  {cat.badge && (
+                                    <span
+                                      className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${cat.badgeColor}`}
+                                    >
+                                      {cat.badge}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[11px] text-gray-500 truncate font-medium">
+                                  {cat.subtitle}
+                                </p>
+                              </div>
+                            </div>
                             <ChevronDown
-                              className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
+                              className={`w-4 h-4 text-gray-400 shrink-0 transition-transform duration-200 ${
                                 isExpanded ? "rotate-180 text-red-600" : ""
                               }`}
                             />
                           </button>
 
                           {isExpanded && (
-                            <div className="pl-3 pr-1 py-1 space-y-1 bg-gray-50/70 rounded-xl mb-1">
-                              {link.items?.map((sub) => (
+                            <div className="px-3 pb-2.5 pt-1 space-y-1 bg-gray-50/50 border-t border-gray-100 animate-in fade-in duration-150">
+                              {cat.items.map((sub) => (
                                 <Link
                                   key={sub.label}
                                   href={sub.href}
                                   onClick={() => setIsMobileMenuOpen(false)}
-                                  className="block py-2 px-3 text-sm font-semibold text-gray-700 hover:text-red-600 hover:bg-white rounded-lg transition"
+                                  className="flex items-center justify-between py-2 px-2.5 text-xs font-semibold text-gray-700 hover:text-red-600 hover:bg-white rounded-lg transition"
                                 >
-                                  {sub.label}
+                                  <span className="truncate">{sub.label}</span>
+                                  {sub.badge && (
+                                    <span className="ml-2 text-[9px] font-bold px-1.5 py-0.2 rounded bg-gray-200/80 text-gray-700">
+                                      {sub.badge}
+                                    </span>
+                                  )}
                                 </Link>
                               ))}
                             </div>
                           )}
                         </div>
-                      ) : (
-                        <Link
-                          href={link.href}
-                          onClick={() => setIsMobileMenuOpen(false)}
-                          className="block py-2.5 text-base font-bold text-gray-900 hover:text-red-600 transition"
-                        >
-                          {link.name}
-                        </Link>
-                      )}
-                    </div>
-                  );
-                })}
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 4. Quick Services & Direct Nepal Support */}
+                <div className="p-3 bg-gray-50/80 rounded-2xl border border-gray-200/70 space-y-2">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 px-1">
+                    Customer Support Nepal
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Link
+                      href="/order-tracking"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center gap-2 p-2 bg-white rounded-xl border border-gray-200/60 text-xs font-bold text-gray-800 hover:border-gray-300 transition shadow-2xs"
+                    >
+                      <Truck className="w-4 h-4 text-red-600 shrink-0" />
+                      <span className="truncate">Track Order</span>
+                    </Link>
+                    <a
+                      href="https://wa.me/9779800000000"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 p-2 bg-white rounded-xl border border-gray-200/60 text-xs font-bold text-gray-800 hover:border-gray-300 transition shadow-2xs"
+                    >
+                      <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span className="truncate">WhatsApp</span>
+                    </a>
+                  </div>
+                  <div className="text-[10px] text-gray-500 px-1 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Free Kathmandu delivery over NPR 2,000 · COD Nationwide</span>
+                  </div>
+                </div>
               </div>
 
               {/* Drawer Bottom Auth Section */}
-              <div className="p-5 border-t border-gray-100 bg-gray-50/60">
+              <div className="p-4 border-t border-gray-100 bg-gray-50/90 sticky bottom-0 z-20">
                 {isMounted && isSignedIn && user ? (
-                  <div className="space-y-3">
-                    {/* User Profile */}
-                    <div className="flex items-center gap-3 p-3 bg-white rounded-2xl border border-gray-200/80 shadow-xs">
-                      <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-900 text-white flex items-center justify-center font-bold text-sm shadow-sm shrink-0">
+                  <div className="space-y-2.5">
+                    {/* User Profile Card */}
+                    <div className="flex items-center gap-2.5 p-2.5 bg-white rounded-xl border border-gray-200/80 shadow-2xs">
+                      <div className="w-9 h-9 rounded-full overflow-hidden bg-slate-900 text-white flex items-center justify-center font-bold text-xs shadow-2xs shrink-0">
                         {user.imageUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
@@ -631,23 +809,23 @@ export default function Navbar() {
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-bold text-gray-950 truncate">
+                        <p className="text-xs font-bold text-gray-950 truncate">
                           {displayName}
                         </p>
-                        <p className="text-xs text-gray-500 truncate">
+                        <p className="text-[11px] text-gray-500 truncate">
                           {userEmail}
                         </p>
                         <span
-                          className={`inline-block mt-0.5 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          className={`inline-block mt-0.5 text-[9px] font-bold px-1.5 py-0.2 rounded-full ${
                             adminRole === "main"
-                              ? "bg-red-100 text-red-700"
+                              ? "bg-red-100 text-red-700 border border-red-200"
                               : adminRole === "normal"
-                              ? "bg-blue-100 text-blue-700"
+                              ? "bg-blue-100 text-blue-700 border border-blue-200"
                               : "bg-gray-100 text-gray-700"
                           }`}
                         >
                           {adminRole === "main"
-                            ? "Store Owner"
+                            ? "Store Owner / Main Admin"
                             : adminRole === "normal"
                             ? "Staff Desk"
                             : "LOKI Member"}
@@ -655,60 +833,51 @@ export default function Navbar() {
                       </div>
                     </div>
 
-                    {/* Account Links */}
+                    {/* Quick Account Links */}
                     <div className="grid grid-cols-2 gap-2">
                       <Link
                         href="/account"
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className="py-2.5 px-3 text-center bg-white hover:bg-gray-100 text-gray-900 border border-gray-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs"
+                        className="py-2 px-3 text-center bg-white hover:bg-gray-100 text-gray-900 border border-gray-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs"
                       >
-                        <User className="w-4 h-4 text-gray-600" />
-                        <span>My Account</span>
+                        <User className="w-3.5 h-3.5 text-gray-600" />
+                        <span>My Profile</span>
                       </Link>
-                      <Link
-                        href="/order-tracking"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="py-2.5 px-3 text-center bg-white hover:bg-gray-100 text-gray-900 border border-gray-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs"
+                      <button
+                        onClick={handleSignOut}
+                        className="py-2 px-3 text-center bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs"
                       >
-                        <Package className="w-4 h-4 text-gray-600" />
-                        <span>Track Orders</span>
-                      </Link>
+                        <LogOut className="w-3.5 h-3.5 text-red-600" />
+                        <span>Sign Out</span>
+                      </button>
                     </div>
 
+                    {/* Admin Access Button (if Store Owner / Staff) */}
                     {isPrivilegedUser && (
                       <Link
                         href="/admin"
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className="w-full py-2.5 px-3 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2"
+                        className="w-full py-2 px-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm shadow-red-600/30"
                       >
-                        <ShieldCheck className="w-4 h-4 text-red-600" />
-                        <span>Admin Workspace</span>
+                        <ShieldCheck className="w-4 h-4 text-white" />
+                        <span>Open Admin Workspace</span>
                       </Link>
                     )}
-
-                    {/* Sign Out Button */}
-                    <button
-                      onClick={handleSignOut}
-                      className="w-full py-2.5 text-center border border-red-200 text-red-600 hover:bg-red-50 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5"
-                    >
-                      <LogOut className="w-4 h-4 text-red-600" />
-                      <span>Sign Out</span>
-                    </button>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
                     <Link
                       href="/login"
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="flex-1 py-3 text-center bg-white hover:bg-gray-100 text-gray-900 border border-gray-200 rounded-xl text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-xs"
+                      className="flex-1 py-2.5 text-center bg-white hover:bg-gray-100 text-gray-900 border border-gray-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs"
                     >
-                      <User className="w-4 h-4" />
+                      <User className="w-3.5 h-3.5 text-gray-600" />
                       <span>Sign In</span>
                     </Link>
                     <Link
                       href="/register"
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="flex-1 py-3 text-center bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-md shadow-red-600/20"
+                      className="flex-1 py-2.5 text-center bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm shadow-red-600/30"
                     >
                       <span>Sign Up</span>
                     </Link>

@@ -58,22 +58,32 @@ export async function GET(req: NextRequest) {
       video: p.specs?.video || (p as any).video || undefined,
     }));
 
+    const responseHeaders = {
+      "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+    };
+
     if (tag) {
       const filtered = mappedProducts.filter((p) =>
         p.tags.some((t) => t.toLowerCase() === tag.toLowerCase())
       );
-      return NextResponse.json({
-        success: true,
-        source: "database",
-        products: filtered,
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          source: "database",
+          products: filtered,
+        },
+        { headers: responseHeaders }
+      );
     }
 
-    return NextResponse.json({
-      success: true,
-      source: "database",
-      products: mappedProducts,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        source: "database",
+        products: mappedProducts,
+      },
+      { headers: responseHeaders }
+    );
   } catch (err: any) {
     if (err && typeof err === "object" && "digest" in err) {
       throw err;

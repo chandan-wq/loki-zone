@@ -2,13 +2,11 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  experimental: {
-    turbopackPluginRuntimeStrategy: "forceWorkerThreads",
-    cpus: 1,
-  },
+  compress: true,
   cacheComponents: true,
   partialPrefetching: true,
   images: {
+    formats: ["image/avif", "image/webp"],
     qualities: [75, 100],
     remotePatterns: [
       {
@@ -89,6 +87,19 @@ const nextConfig: NextConfig = {
         source: "/combo-builder",
         destination: "/custom-combo",
         permanent: false,
+      },
+    ];
+  },
+  async headers() {
+    return [
+      {
+        source: "/:path*.(svg|jpg|jpeg|png|webp|avif|ico|woff|woff2|mp4)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
       },
     ];
   },
